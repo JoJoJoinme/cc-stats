@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title or "cc-stats" }}</title>
+  <style>
+    :root {
+      --bg: #f3efe6;
+      --card: #fffdf8;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #ded6c6;
+      --accent: #045d5d;
+      --accent-soft: #d7ece7;
+      --warm: #b85c38;
+      --ok: #2f855a;
+      --warn: #b7791f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f7f3ea 0%, #efe7d8 100%);
+      color: var(--ink);
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px; }
+    .nav {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .brand { font-size: 1.25rem; font-weight: 700; color: var(--warm); }
+    .grid { display: grid; gap: 18px; }
+    .cards { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .two { grid-template-columns: 2fr 1fr; }
+    .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 6px 28px rgba(38, 34, 25, 0.05);
+    }
+    h1, h2, h3 { margin: 0 0 12px 0; }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.25rem; }
+    .muted { color: var(--muted); }
+    .metric { font-size: 2rem; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-size: 0.9rem; }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.85rem;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #e6dfd2;
+      overflow: hidden;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--warm), var(--accent));
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    input, select, button, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+      font: inherit;
+      color: var(--ink);
+    }
+    button {
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #f8f4ec;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      overflow: auto;
+    }
+    @media (max-width: 900px) {
+      .two { grid-template-columns: 1fr; }
+      .three { grid-template-columns: 1fr; }
+      .wrap { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="nav">
+      <div class="brand">cc-stats</div>
+      <a href="/">Overview</a>
+      <a href="/sessions">Sessions</a>
+      <a href="/api/v1/stats/overview">JSON API</a>
+    </div>
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

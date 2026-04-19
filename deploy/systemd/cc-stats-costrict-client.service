@@ -1,0 +1,14 @@
+[Unit]
+Description=cc-stats costrict watcher
+After=network-online.target
+
+[Service]
+WorkingDirectory=/path/to/cc-stats
+ExecStart=/home/YOUR_USER/.local/share/cc-stats/runtime/bin/python -m cc_stats.cli client watch-costrict --interval 20
+Restart=always
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+Environment=CC_STATS_SERVER_URL=http://YOUR_SERVER:8787
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,8 @@
+{
+  "name": "cc-stats-telemetry",
+  "version": "0.1.0",
+  "description": "cc-stats telemetry hooks for Claude Code",
+  "author": {
+    "name": "cc-stats"
+  }
+}

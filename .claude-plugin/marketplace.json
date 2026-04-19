@@ -1,0 +1,16 @@
+{
+  "name": "cc-stats",
+  "owner": {
+    "name": "cc-stats"
+  },
+  "metadata": {
+    "description": "cc-stats marketplace for Claude Code telemetry plugins"
+  },
+  "plugins": [
+    {
+      "name": "cc-stats-telemetry",
+      "source": "./plugins/cc-stats-telemetry",
+      "description": "Send Claude Code sessions to a cc-stats server through the local launcher"
+    }
+  ]
+}

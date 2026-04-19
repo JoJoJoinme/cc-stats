@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="margin-bottom:18px;">
+  <h1>User Patterns</h1>
+  <div class="muted">{{ user_id }}</div>
+</div>
+
+<div class="grid cards" style="margin-bottom:18px;">
+  <div class="card"><div class="muted">Sessions</div><div class="metric">{{ patterns.overview.sessions }}</div></div>
+  <div class="card"><div class="muted">Avg Duration</div><div class="metric">{{ patterns.overview.avg_duration_sec|round|int }}s</div></div>
+  <div class="card"><div class="muted">Avg Turns</div><div class="metric">{{ patterns.overview.avg_turn_count|round(1) }}</div></div>
+  <div class="card"><div class="muted">Total Tokens</div><div class="metric">{{ patterns.overview.total_tokens|int }}</div></div>
+</div>
+
+<div class="grid two">
+  <div class="card">
+    <h2>Category Mix</h2>
+    <table>
+      <thead><tr><th>Category</th><th>Sessions</th></tr></thead>
+      <tbody>
+      {% for item in patterns.categories %}
+        <tr><td>{{ item.label }}</td><td>{{ item.sessions }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Top Repositories</h2>
+    <table>
+      <thead><tr><th>Repo</th><th>Sessions</th></tr></thead>
+      <tbody>
+      {% for item in patterns.repos %}
+        <tr><td>{{ item.label }}</td><td>{{ item.sessions }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid two" style="margin-top:18px;">
+  <div class="card">
+    <h2>Top Tools</h2>
+    <table>
+      <thead><tr><th>Tool</th><th>Calls</th></tr></thead>
+      <tbody>
+      {% for item in patterns.tools %}
+        <tr><td>{{ item.label }}</td><td>{{ item.calls }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Recent Sessions</h2>
+    <table>
+      <thead><tr><th>Time</th><th>Repo</th><th>Category</th><th>Summary</th></tr></thead>
+      <tbody>
+      {% for item in patterns.recent_sessions %}
+        <tr>
+          <td><a href="/sessions/{{ item.session_id }}">{{ item.started_at or item.ended_at or item.session_id }}</a></td>
+          <td>{{ item.repo or "" }}</td>
+          <td>{{ item.category }}</td>
+          <td>{{ item.summary }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

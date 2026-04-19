@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="margin-bottom:18px;">
+  <h1>Session Detail</h1>
+  <div class="muted">{{ session.session_id }}</div>
+  <div class="muted" style="margin-top:6px;">Source: {{ session.source }}</div>
+  <div style="margin-top:10px;">
+    <span class="pill">{{ session.source }}</span>
+    <span class="pill">{{ session.user_id }}</span>
+    {% if session.repo %}<span class="pill">{{ session.repo }}</span>{% endif %}
+    <span class="pill">{{ session.category }}</span>
+    {% if session.model_primary %}<span class="pill">{{ session.model_primary }}</span>{% endif %}
+    {% if session.status %}<span class="pill">{{ session.status }}</span>{% endif %}
+  </div>
+</div>
+
+<div class="grid cards" style="margin-bottom:18px;">
+  <div class="card"><div class="muted">Turns</div><div class="metric">{{ session.turn_count }}</div></div>
+  <div class="card"><div class="muted">Tool Calls</div><div class="metric">{{ session.tool_call_count }}</div></div>
+  <div class="card"><div class="muted">Duration</div><div class="metric">{{ session.duration_sec or 0 }}s</div></div>
+  <div class="card"><div class="muted">Input Tokens</div><div class="metric">{{ session.total_input_tokens }}</div></div>
+  <div class="card"><div class="muted">Output Tokens</div><div class="metric">{{ session.total_output_tokens }}</div></div>
+  <div class="card"><div class="muted">Cost</div><div class="metric">{{ session.total_cost }}</div></div>
+</div>
+
+<div class="card" style="margin-bottom:18px;">
+  <h2>Summary</h2>
+  <div>{{ session.summary }}</div>
+</div>
+
+<div class="grid two">
+  <div class="card">
+    <h2>Turns</h2>
+    {% for turn in session.turns %}
+      <div style="padding:12px 0; border-bottom:1px solid #ded6c6;">
+        <div class="muted">Turn {{ turn.turn_idx }}{% if turn.duration_sec %} · {{ turn.duration_sec }}s{% endif %} · tools {{ turn.tool_call_count }}</div>
+        {% if turn.user_text %}
+          <h3>User</h3>
+          <pre>{{ turn.user_text }}</pre>
+        {% endif %}
+        {% if turn.assistant_text %}
+          <h3>Assistant</h3>
+          <pre>{{ turn.assistant_text }}</pre>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h2>Tool Calls</h2>
+    <table>
+      <thead><tr><th>Turn</th><th>Tool</th><th>Kind</th><th>Success</th></tr></thead>
+      <tbody>
+      {% for call in session.tool_calls %}
+        <tr>
+          <td>{{ call.turn_idx }}</td>
+          <td>{{ call.tool_name }}</td>
+          <td>{{ call.tool_kind }}</td>
+          <td>{{ call.success }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <h2 style="margin-top:18px;">Raw Payload</h2>
+    <pre>{{ session.raw_payload }}</pre>
+    <h2 style="margin-top:18px;">Extra</h2>
+    <pre>{{ session.extra }}</pre>
+  </div>
+</div>
+{% endblock %}

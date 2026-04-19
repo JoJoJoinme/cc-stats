@@ -1,0 +1,14 @@
+[Unit]
+Description=cc-stats server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/path/to/cc-stats
+ExecStart=/opt/cc-stats/runtime/bin/python -m cc_stats.cli server serve --db-path /path/to/cc-stats/data/cc-stats.db --host 0.0.0.0 --port 8787
+Restart=always
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

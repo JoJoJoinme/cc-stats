@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="margin-bottom:18px;">
+  <h1>Team AI Usage Overview</h1>
+  <div class="muted">Claude Code + costrict IDE normalized into one analytics surface.</div>
+</div>
+
+<div class="grid cards" style="margin-bottom:18px;">
+  <div class="card"><div class="muted">Sessions</div><div class="metric">{{ overview.sessions }}</div></div>
+  <div class="card"><div class="muted">Users</div><div class="metric">{{ overview.users }}</div></div>
+  <div class="card"><div class="muted">Repos</div><div class="metric">{{ overview.repos }}</div></div>
+  <div class="card"><div class="muted">Avg Duration</div><div class="metric">{{ overview.avg_duration_sec|round|int }}s</div></div>
+  <div class="card"><div class="muted">Avg Turns</div><div class="metric">{{ overview.avg_turn_count|round(1) }}</div></div>
+  <div class="card"><div class="muted">Total Tokens</div><div class="metric">{{ (overview.total_input_tokens + overview.total_output_tokens)|int }}</div></div>
+</div>
+
+<div class="grid cards" style="margin-bottom:18px;">
+  <div class="card">
+    <h2>MCP Adoption</h2>
+    <div class="bar"><span style="width: {{ (overview.mcp_adoption * 100)|round(1) }}%"></span></div>
+    <div class="muted">{{ (overview.mcp_adoption * 100)|round(1) }}%</div>
+  </div>
+  <div class="card">
+    <h2>Skill Adoption</h2>
+    <div class="bar"><span style="width: {{ (overview.skill_adoption * 100)|round(1) }}%"></span></div>
+    <div class="muted">{{ (overview.skill_adoption * 100)|round(1) }}%</div>
+  </div>
+  <div class="card">
+    <h2>Subagent Adoption</h2>
+    <div class="bar"><span style="width: {{ (overview.subagent_adoption * 100)|round(1) }}%"></span></div>
+    <div class="muted">{{ (overview.subagent_adoption * 100)|round(1) }}%</div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:18px;">
+  <h2>Capability Coverage</h2>
+  <table>
+    <thead><tr><th>Capability</th><th>Actual Sessions</th><th>Available Sessions</th><th>Topic Sessions</th><th>Calls</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Skills</td>
+        <td>{{ capabilities.skills.actual_sessions }}</td>
+        <td>-</td>
+        <td>{{ capabilities.skills.topic_sessions }}</td>
+        <td>{{ capabilities.skills.call_count }}</td>
+      </tr>
+      <tr>
+        <td>MCP</td>
+        <td>{{ capabilities.mcp.actual_sessions }}</td>
+        <td>{{ capabilities.mcp.available_sessions }}</td>
+        <td>{{ capabilities.mcp.topic_sessions }}</td>
+        <td>{{ capabilities.mcp.call_count }}</td>
+      </tr>
+      <tr>
+        <td>Subagents</td>
+        <td>{{ capabilities.subagents.actual_sessions }}</td>
+        <td>-</td>
+        <td>-</td>
+        <td>{{ capabilities.subagents.call_count }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="grid two">
+  <div class="card">
+    <h2>Top Users</h2>
+    <table>
+      <thead><tr><th>User</th><th>Sessions</th><th>Avg Turns</th><th>Total Tokens</th></tr></thead>
+      <tbody>
+      {% for item in users %}
+        <tr>
+          <td><a href="/users/{{ item.label }}">{{ item.label }}</a></td>
+          <td>{{ item.sessions }}</td>
+          <td>{{ item.avg_turn_count|round(1) }}</td>
+          <td>{{ item.total_tokens|int }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>By Source</h2>
+    <table>
+      <thead><tr><th>Source</th><th>Sessions</th><th>Skill Actual</th><th>Skill Topic</th><th>MCP Actual</th><th>MCP Available</th><th>MCP Topic</th></tr></thead>
+      <tbody>
+      {% for item in capabilities.by_source %}
+        <tr>
+          <td>{{ item.source }}</td>
+          <td>{{ item.sessions }}</td>
+          <td>{{ item.skill_sessions }}</td>
+          <td>{{ item.skill_topic_sessions }}</td>
+          <td>{{ item.mcp_sessions }}</td>
+          <td>{{ item.mcp_available_sessions }}</td>
+          <td>{{ item.mcp_topic_sessions }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid three" style="margin-top:18px;">
+  <div class="card">
+    <h2>Daily Activity</h2>
+    <table>
+      <thead><tr><th>Day</th><th>Sessions</th><th>Users</th><th>Tokens</th></tr></thead>
+      <tbody>
+      {% for item in daily %}
+        <tr><td>{{ item.day }}</td><td>{{ item.sessions }}</td><td>{{ item.users }}</td><td>{{ item.total_tokens|int }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Weekly Activity</h2>
+    <table>
+      <thead><tr><th>Week</th><th>Sessions</th><th>Users</th><th>Tokens</th></tr></thead>
+      <tbody>
+      {% for item in weekly %}
+        <tr><td>{{ item.week }}</td><td>{{ item.sessions }}</td><td>{{ item.users }}</td><td>{{ item.total_tokens|int }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Monthly Activity</h2>
+    <table>
+      <thead><tr><th>Month</th><th>Sessions</th><th>Users</th><th>Tokens</th></tr></thead>
+      <tbody>
+      {% for item in monthly %}
+        <tr><td>{{ item.month }}</td><td>{{ item.sessions }}</td><td>{{ item.users }}</td><td>{{ item.total_tokens|int }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid two" style="margin-top:18px;">
+  <div class="card">
+    <h2>Top Tools</h2>
+    <table>
+      <thead><tr><th>Tool</th><th>Calls</th><th>Sessions</th><th>Success</th></tr></thead>
+      <tbody>
+      {% for item in tools %}
+        <tr>
+          <td>{{ item.label }}</td>
+          <td>{{ item.calls }}</td>
+          <td>{{ item.sessions }}</td>
+          <td>{{ item.successes }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Top Categories</h2>
+    <table>
+      <thead><tr><th>Category</th><th>Sessions</th><th>Avg Turns</th></tr></thead>
+      <tbody>
+      {% for item in categories %}
+        <tr>
+          <td>{{ item.label }}</td>
+          <td>{{ item.sessions }}</td>
+          <td>{{ item.avg_turn_count|round(1) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:18px;">
+  <h2>Top Repositories</h2>
+  <table>
+    <thead><tr><th>Repo</th><th>Sessions</th><th>Avg Duration</th><th>MCP Rate</th><th>Skill Rate</th></tr></thead>
+    <tbody>
+    {% for item in repos %}
+      <tr>
+        <td>{{ item.label }}</td>
+        <td>{{ item.sessions }}</td>
+        <td>{{ item.avg_duration_sec|round|int }}s</td>
+        <td>{{ (item.mcp_rate * 100)|round(1) }}%</td>
+        <td>{{ (item.skill_rate * 100)|round(1) }}%</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

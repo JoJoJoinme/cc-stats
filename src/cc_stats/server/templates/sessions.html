@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="margin-bottom:18px;">
+  <h1>Sessions</h1>
+  <div class="muted" style="margin-bottom:10px;">Source values use canonical ids like <code>claude-code</code> and <code>costrict-ide</code>.</div>
+  <form method="get">
+    <div class="form-row">
+      <input type="text" name="source" placeholder="source: claude-code" value="{{ filters.source }}" />
+      <input type="text" name="user_id" placeholder="user_id" value="{{ filters.user_id }}" />
+      <input type="text" name="repo" placeholder="repo" value="{{ filters.repo }}" />
+      <input type="text" name="category" placeholder="category" value="{{ filters.category }}" />
+      <select name="has_skill">
+        <option value="">has_skill: any</option>
+        <option value="true" {% if filters.has_skill == "true" %}selected{% endif %}>has_skill: true</option>
+        <option value="false" {% if filters.has_skill == "false" %}selected{% endif %}>has_skill: false</option>
+      </select>
+      <select name="has_mcp">
+        <option value="">has_mcp: any</option>
+        <option value="true" {% if filters.has_mcp == "true" %}selected{% endif %}>has_mcp: true</option>
+        <option value="false" {% if filters.has_mcp == "false" %}selected{% endif %}>has_mcp: false</option>
+      </select>
+      <input type="text" name="text_query" placeholder="text search" value="{{ filters.text_query }}" />
+      <select name="sort">
+        <option value="">sort: latest</option>
+        <option value="duration" {% if filters.sort == "duration" %}selected{% endif %}>duration</option>
+        <option value="turns" {% if filters.sort == "turns" %}selected{% endif %}>turns</option>
+        <option value="tokens" {% if filters.sort == "tokens" %}selected{% endif %}>tokens</option>
+        <option value="cost" {% if filters.sort == "cost" %}selected{% endif %}>cost</option>
+      </select>
+    </div>
+    <button type="submit">Apply</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="muted" style="margin-bottom:10px;">{{ result["total"] }} sessions</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Source</th>
+        <th>User</th>
+        <th>Repo</th>
+        <th>Category</th>
+        <th>Turns</th>
+        <th>Tools</th>
+        <th>Model</th>
+        <th>Summary</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in result["items"] %}
+      <tr>
+        <td><a href="/sessions/{{ item.session_id }}">{{ item.started_at or item.ended_at or item.session_id }}</a></td>
+        <td><span class="pill">{{ item.source }}</span></td>
+        <td><a href="/users/{{ item.user_id }}">{{ item.user_id }}</a></td>
+        <td>{{ item.repo or "" }}</td>
+        <td>{{ item.category }}</td>
+        <td>{{ item.turn_count }}</td>
+        <td>{{ item.tool_call_count }}</td>
+        <td>{{ item.model_primary or "" }}</td>
+        <td>{{ item.summary }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

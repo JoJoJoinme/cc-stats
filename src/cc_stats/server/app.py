@@ -1,12 +1,9 @@
-from __future__ import annotations
-
-import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 
 from ..models import SessionRecord, ToolCallRecord, TurnRecord
@@ -17,6 +14,7 @@ from .db import (
     export_sessions_csv,
     get_session_detail,
     grouped_stats,
+    insight_stats,
     list_sessions,
     monthly_stats,
     search_sessions,
@@ -31,13 +29,13 @@ from .db import (
 TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 
-def _decode_bool(value: str | None) -> bool | None:
+def _decode_bool(value: Optional[str]) -> Optional[bool]:
     if value is None:
         return None
     return value.lower() in {"1", "true", "yes", "y", "on"}
 
 
-def _session_from_payload(payload: dict[str, Any]) -> SessionRecord:
+def _session_from_payload(payload: Dict[str, Any]) -> SessionRecord:
     turns = [TurnRecord(**turn) for turn in payload.get("turns", [])]
     tool_calls = [ToolCallRecord(**call) for call in payload.get("tool_calls", [])]
     payload = {**payload, "turns": turns, "tool_calls": tool_calls}
@@ -45,26 +43,26 @@ def _session_from_payload(payload: dict[str, Any]) -> SessionRecord:
 
 
 def _filters_from_request(
-    source: str | None,
-    user_id: str | None,
-    repo: str | None,
-    git_branch: str | None,
-    model: str | None,
-    category: str | None,
-    status: str | None,
-    has_mcp: str | None,
-    has_skill: str | None,
-    has_subagent: str | None,
-    tool_name: str | None,
-    mcp_server: str | None,
-    skill_name: str | None,
-    date_from: str | None,
-    date_to: str | None,
-    text_query: str | None,
-    sort: str | None,
+    source: Optional[str],
+    user_id: Optional[str],
+    repo: Optional[str],
+    git_branch: Optional[str],
+    model: Optional[str],
+    category: Optional[str],
+    status: Optional[str],
+    has_mcp: Optional[str],
+    has_skill: Optional[str],
+    has_subagent: Optional[str],
+    tool_name: Optional[str],
+    mcp_server: Optional[str],
+    skill_name: Optional[str],
+    date_from: Optional[str],
+    date_to: Optional[str],
+    text_query: Optional[str],
+    sort: Optional[str],
     limit: int,
     offset: int,
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     return {
         "source": source,
         "user_id": user_id,
@@ -89,11 +87,11 @@ def _filters_from_request(
 
 
 @lru_cache(maxsize=1)
-def get_db_path(default: str | None = None) -> str | None:
+def get_db_path(default: Optional[str] = None) -> Optional[str]:
     return default
 
 
-def create_app(db_path: str | None = None, auth_token: str | None = None) -> FastAPI:
+def create_app(db_path: Optional[str] = None, auth_token: Optional[str] = None) -> FastAPI:
     app = FastAPI(title="cc-stats")
     db_target = db_path or get_db_path(None)
 
@@ -104,7 +102,7 @@ def create_app(db_path: str | None = None, auth_token: str | None = None) -> Fas
         finally:
             conn.close()
 
-    def require_ingest_token(authorization: str | None = Header(default=None)) -> None:
+    def require_ingest_token(authorization: Optional[str] = Header(default=None)) -> None:
         if not auth_token:
             return
         expected = f"Bearer {auth_token}"
@@ -112,25 +110,25 @@ def create_app(db_path: str | None = None, auth_token: str | None = None) -> Fas
             raise HTTPException(status_code=401, detail="Invalid ingest token")
 
     @app.get("/api/v1/health")
-    def health() -> dict[str, Any]:
+    def health() -> Dict[str, Any]:
         return {"ok": True}
 
     @app.post("/api/v1/ingest/session")
     def ingest_session(
-        payload: dict[str, Any],
+        payload: Dict[str, Any],
         _: None = Depends(require_ingest_token),
         conn=Depends(get_conn),
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         session = _session_from_payload(payload)
         upsert_session(conn, session)
         return {"ok": True, "session_id": session.session_id}
 
     @app.post("/api/v1/ingest/batch")
     def ingest_batch(
-        payload: list[dict[str, Any]],
+        payload: List[Dict[str, Any]],
         _: None = Depends(require_ingest_token),
         conn=Depends(get_conn),
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         count = 0
         for item in payload:
             session = _session_from_payload(item)
@@ -139,66 +137,67 @@ def create_app(db_path: str | None = None, auth_token: str | None = None) -> Fas
         return {"ok": True, "count": count}
 
     @app.get("/api/v1/stats/overview")
-    def api_overview(conn=Depends(get_conn)) -> dict[str, Any]:
+    def api_overview(conn=Depends(get_conn)) -> Dict[str, Any]:
         return {
             "overview": stats_overview(conn),
             "capabilities": capability_stats(conn),
+            "insights": insight_stats(conn),
             "daily": daily_stats(conn, limit=30),
             "weekly": weekly_stats(conn, limit=16),
             "monthly": monthly_stats(conn, limit=12),
         }
 
     @app.get("/api/v1/stats/timeline")
-    def api_timeline(grain: str = Query(default="day", pattern="^(day|week|month)$"), limit: int = 30, conn=Depends(get_conn)) -> dict[str, Any]:
+    def api_timeline(grain: str = Query(default="day", pattern="^(day|week|month)$"), limit: int = 30, conn=Depends(get_conn)) -> Dict[str, Any]:
         return {"grain": grain, "items": timeline_stats(conn, grain, limit=limit)}
 
     @app.get("/api/v1/stats/users")
-    def api_users(limit: int = 50, conn=Depends(get_conn)) -> list[dict[str, Any]]:
+    def api_users(limit: int = 50, conn=Depends(get_conn)) -> List[Dict[str, Any]]:
         return grouped_stats(conn, "users", limit=limit)
 
     @app.get("/api/v1/stats/tools")
-    def api_tools(limit: int = 50, conn=Depends(get_conn)) -> list[dict[str, Any]]:
+    def api_tools(limit: int = 50, conn=Depends(get_conn)) -> List[Dict[str, Any]]:
         return grouped_stats(conn, "tools", limit=limit)
 
     @app.get("/api/v1/stats/repos")
-    def api_repos(limit: int = 50, conn=Depends(get_conn)) -> list[dict[str, Any]]:
+    def api_repos(limit: int = 50, conn=Depends(get_conn)) -> List[Dict[str, Any]]:
         return grouped_stats(conn, "repos", limit=limit)
 
     @app.get("/api/v1/stats/categories")
-    def api_categories(limit: int = 50, conn=Depends(get_conn)) -> list[dict[str, Any]]:
+    def api_categories(limit: int = 50, conn=Depends(get_conn)) -> List[Dict[str, Any]]:
         return grouped_stats(conn, "categories", limit=limit)
 
     @app.get("/api/v1/stats/sources")
-    def api_sources(limit: int = 50, conn=Depends(get_conn)) -> list[dict[str, Any]]:
+    def api_sources(limit: int = 50, conn=Depends(get_conn)) -> List[Dict[str, Any]]:
         return grouped_stats(conn, "sources", limit=limit)
 
     @app.get("/api/v1/stats/capabilities")
-    def api_capabilities(conn=Depends(get_conn)) -> dict[str, Any]:
+    def api_capabilities(conn=Depends(get_conn)) -> Dict[str, Any]:
         return capability_stats(conn)
 
     @app.get("/api/v1/sessions")
     def api_sessions(
-        source: str | None = None,
-        user_id: str | None = None,
-        repo: str | None = None,
-        git_branch: str | None = None,
-        model: str | None = None,
-        category: str | None = None,
-        status: str | None = None,
-        has_mcp: str | None = None,
-        has_skill: str | None = None,
-        has_subagent: str | None = None,
-        tool_name: str | None = None,
-        mcp_server: str | None = None,
-        skill_name: str | None = None,
-        date_from: str | None = None,
-        date_to: str | None = None,
-        text_query: str | None = None,
-        sort: str | None = None,
+        source: Optional[str] = None,
+        user_id: Optional[str] = None,
+        repo: Optional[str] = None,
+        git_branch: Optional[str] = None,
+        model: Optional[str] = None,
+        category: Optional[str] = None,
+        status: Optional[str] = None,
+        has_mcp: Optional[str] = None,
+        has_skill: Optional[str] = None,
+        has_subagent: Optional[str] = None,
+        tool_name: Optional[str] = None,
+        mcp_server: Optional[str] = None,
+        skill_name: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        text_query: Optional[str] = None,
+        sort: Optional[str] = None,
         limit: int = Query(default=50, le=500),
         offset: int = Query(default=0, ge=0),
         conn=Depends(get_conn),
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         filters = _filters_from_request(
             source,
             user_id,
@@ -223,39 +222,39 @@ def create_app(db_path: str | None = None, auth_token: str | None = None) -> Fas
         return list_sessions(conn, filters)
 
     @app.get("/api/v1/sessions/{session_id}")
-    def api_session_detail(session_id: str, conn=Depends(get_conn)) -> dict[str, Any]:
+    def api_session_detail(session_id: str, conn=Depends(get_conn)) -> Dict[str, Any]:
         detail = get_session_detail(conn, session_id)
         if not detail:
             raise HTTPException(status_code=404, detail="Session not found")
         return detail
 
     @app.get("/api/v1/users/{user_id}/patterns")
-    def api_user_patterns(user_id: str, conn=Depends(get_conn)) -> dict[str, Any]:
+    def api_user_patterns(user_id: str, conn=Depends(get_conn)) -> Dict[str, Any]:
         return user_patterns(conn, user_id)
 
     @app.get("/api/v1/search")
-    def api_search(q: str, limit: int = 25, conn=Depends(get_conn)) -> list[dict[str, Any]]:
+    def api_search(q: str, limit: int = 25, conn=Depends(get_conn)) -> List[Dict[str, Any]]:
         return search_sessions(conn, q, limit=limit)
 
     @app.get("/api/v1/export/sessions.csv")
     def api_export_sessions_csv(
-        source: str | None = None,
-        user_id: str | None = None,
-        repo: str | None = None,
-        git_branch: str | None = None,
-        model: str | None = None,
-        category: str | None = None,
-        status: str | None = None,
-        has_mcp: str | None = None,
-        has_skill: str | None = None,
-        has_subagent: str | None = None,
-        tool_name: str | None = None,
-        mcp_server: str | None = None,
-        skill_name: str | None = None,
-        date_from: str | None = None,
-        date_to: str | None = None,
-        text_query: str | None = None,
-        sort: str | None = None,
+        source: Optional[str] = None,
+        user_id: Optional[str] = None,
+        repo: Optional[str] = None,
+        git_branch: Optional[str] = None,
+        model: Optional[str] = None,
+        category: Optional[str] = None,
+        status: Optional[str] = None,
+        has_mcp: Optional[str] = None,
+        has_skill: Optional[str] = None,
+        has_subagent: Optional[str] = None,
+        tool_name: Optional[str] = None,
+        mcp_server: Optional[str] = None,
+        skill_name: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        text_query: Optional[str] = None,
+        sort: Optional[str] = None,
         conn=Depends(get_conn),
     ) -> PlainTextResponse:
         filters = _filters_from_request(
@@ -295,6 +294,7 @@ def create_app(db_path: str | None = None, auth_token: str | None = None) -> Fas
                 "request": request,
                 "overview": stats_overview(conn),
                 "capabilities": capability_stats(conn),
+                "insights": insight_stats(conn),
                 "daily": daily_stats(conn, limit=14),
                 "weekly": weekly_stats(conn, limit=12),
                 "monthly": monthly_stats(conn, limit=12),
@@ -309,14 +309,14 @@ def create_app(db_path: str | None = None, auth_token: str | None = None) -> Fas
     @app.get("/sessions", response_class=HTMLResponse)
     def sessions_page(
         request: Request,
-        source: str | None = None,
-        user_id: str | None = None,
-        repo: str | None = None,
-        category: str | None = None,
-        has_mcp: str | None = None,
-        has_skill: str | None = None,
-        text_query: str | None = None,
-        sort: str | None = None,
+        source: Optional[str] = None,
+        user_id: Optional[str] = None,
+        repo: Optional[str] = None,
+        category: Optional[str] = None,
+        has_mcp: Optional[str] = None,
+        has_skill: Optional[str] = None,
+        text_query: Optional[str] = None,
+        sort: Optional[str] = None,
         limit: int = Query(default=100, le=500),
         offset: int = Query(default=0, ge=0),
         conn=Depends(get_conn),
@@ -369,9 +369,6 @@ def create_app(db_path: str | None = None, auth_token: str | None = None) -> Fas
         detail = get_session_detail(conn, session_id)
         if not detail:
             raise HTTPException(status_code=404, detail="Session not found")
-        detail["models"] = json.loads(detail.get("models_json") or "[]")
-        detail["raw_payload"] = json.loads(detail.get("raw_payload_json") or "{}")
-        detail["extra"] = json.loads(detail.get("extra_json") or "{}")
         return TEMPLATES.TemplateResponse(
             request,
             "session_detail.html",

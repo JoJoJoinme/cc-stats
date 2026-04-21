@@ -1,10 +1,9 @@
-from __future__ import annotations
-
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional, Set
 
+from ..analysis import enrich_session
 from ..classification import classify_session, summarize_session
 from ..models import SessionRecord, ToolCallRecord, TurnRecord
 from ..paths import claude_projects_dir, find_claude_transcript
@@ -43,21 +42,21 @@ SKILL_BASE_DIR_RE = re.compile(r"Base directory for this skill:\s*(.+?[\\\\/]ski
 SKILL_FORMAT_RE = re.compile(r"<skill-format>\s*true\s*</skill-format>", re.IGNORECASE)
 
 
-def extract_command_name(text: str) -> str | None:
+def extract_command_name(text: str) -> Optional[str]:
     match = COMMAND_NAME_RE.search(text)
     if not match:
         return None
     return match.group(1).strip()
 
 
-def extract_command_message(text: str) -> str | None:
+def extract_command_message(text: str) -> Optional[str]:
     match = COMMAND_MESSAGE_RE.search(text)
     if not match:
         return None
     return compact_ws(match.group(1))
 
 
-def extract_skill_name(text: str) -> str | None:
+def extract_skill_name(text: str) -> Optional[str]:
     match = SKILL_BASE_DIR_RE.search(text)
     if not match:
         return None
@@ -68,7 +67,7 @@ def has_skill_format_marker(text: str) -> bool:
     return bool(SKILL_FORMAT_RE.search(text))
 
 
-def extract_mcp_server_from_name(name: str) -> str | None:
+def extract_mcp_server_from_name(name: str) -> Optional[str]:
     tool_name = compact_ws(name)
     if not tool_name.startswith("mcp__"):
         return None
@@ -78,7 +77,7 @@ def extract_mcp_server_from_name(name: str) -> str | None:
     return parts[1].strip() or None
 
 
-def parse_claude_transcript(transcript_path: Path, hook_payload: dict[str, Any] | None = None) -> SessionRecord:
+def parse_claude_transcript(transcript_path: Path, hook_payload: Optional[Dict[str, Any]] = None) -> SessionRecord:
     rows = read_jsonl(transcript_path)
     if not rows:
         raise ValueError(f"No rows found in {transcript_path}")
@@ -87,27 +86,27 @@ def parse_claude_transcript(transcript_path: Path, hook_payload: dict[str, Any] 
     native_session_id = (hook_payload or {}).get("session_id") or first.get("sessionId") or transcript_path.stem
     session_id = f"claude-code:{native_session_id}"
     cwd = (hook_payload or {}).get("cwd") or first.get("cwd")
-    turns: list[TurnRecord] = []
-    tool_calls: list[ToolCallRecord] = []
-    tool_calls_by_id: dict[str, ToolCallRecord] = {}
+    turns = []
+    tool_calls = []
+    tool_calls_by_id = {}
     models = Counter()
-    current_turn: TurnRecord | None = None
-    summary_texts: list[str] = []
-    command_summary_texts: list[str] = []
-    last_message_uuid: str | None = None
-    started_at: str | None = None
-    ended_at: str | None = None
+    current_turn = None  # type: Optional[TurnRecord]
+    summary_texts = []
+    command_summary_texts = []
+    last_message_uuid = None  # type: Optional[str]
+    started_at = None  # type: Optional[str]
+    ended_at = None  # type: Optional[str]
     total_input = 0
     total_output = 0
     total_cache_creation = 0
     total_cache_read = 0
     total_cost = 0.0
-    seen_usage_ids: set[str] = set()
-    pending_command_name: str | None = None
-    pending_command_message: str | None = None
-    observed_skill_names: set[str] = set()
-    available_mcp_tools: set[str] = set()
-    available_mcp_servers: set[str] = set()
+    seen_usage_ids = set()  # type: Set[str]
+    pending_command_name = None  # type: Optional[str]
+    pending_command_message = None  # type: Optional[str]
+    observed_skill_names = set()  # type: Set[str]
+    available_mcp_tools = set()  # type: Set[str]
+    available_mcp_servers = set()  # type: Set[str]
 
     for row in rows:
         row_type = row.get("type")
@@ -361,10 +360,10 @@ def parse_claude_transcript(transcript_path: Path, hook_payload: dict[str, Any] 
         turns=turns,
         tool_calls=tool_calls,
     )
-    return session
+    return enrich_session(session)
 
 
-def build_session_from_claude_hook(payload: dict[str, Any] | None = None) -> SessionRecord:
+def build_session_from_claude_hook(payload: Optional[Dict[str, Any]] = None) -> SessionRecord:
     payload = payload or load_stdin_json()
     transcript_path = payload.get("transcript_path")
     session_id = payload.get("session_id")
@@ -375,9 +374,9 @@ def build_session_from_claude_hook(payload: dict[str, Any] | None = None) -> Ses
     return parse_claude_transcript(resolved, hook_payload=payload)
 
 
-def backfill_claude(limit: int | None = None) -> list[SessionRecord]:
+def backfill_claude(limit: Optional[int] = None) -> List[SessionRecord]:
     project_dir = claude_projects_dir()
-    sessions: list[SessionRecord] = []
+    sessions = []
     if not project_dir.exists():
         return sessions
     for path in sorted(project_dir.glob("**/*.jsonl")):

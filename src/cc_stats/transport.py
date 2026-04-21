@@ -1,13 +1,11 @@
-from __future__ import annotations
-
 import json
-from typing import Any
+from typing import Any, Dict, Optional, Tuple
 from urllib import error, request
 
 from .config import load_client_config
 
 
-def resolve_server_and_token(server_url: str | None = None, ingest_token: str | None = None) -> tuple[str, str | None]:
+def resolve_server_and_token(server_url: Optional[str] = None, ingest_token: Optional[str] = None) -> Tuple[str, Optional[str]]:
     config = load_client_config()
     resolved_server = server_url or config.resolve_server_url()
     resolved_token = ingest_token or config.resolve_ingest_token()
@@ -16,7 +14,7 @@ def resolve_server_and_token(server_url: str | None = None, ingest_token: str | 
     return resolved_server.rstrip("/"), resolved_token
 
 
-def post_json(url: str, payload: Any, token: str | None = None, timeout: int = 20) -> dict[str, Any]:
+def post_json(url: str, payload: Any, token: Optional[str] = None, timeout: int = 20) -> Dict[str, Any]:
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     if token:
@@ -33,6 +31,6 @@ def post_json(url: str, payload: Any, token: str | None = None, timeout: int = 2
         raise RuntimeError(f"Failed to reach {url}: {exc}") from exc
 
 
-def send_session(payload: dict[str, Any], server_url: str | None = None, ingest_token: str | None = None) -> dict[str, Any]:
+def send_session(payload: Dict[str, Any], server_url: Optional[str] = None, ingest_token: Optional[str] = None) -> Dict[str, Any]:
     resolved_server, token = resolve_server_and_token(server_url, ingest_token)
     return post_json(f"{resolved_server}/api/v1/ingest/session", payload, token=token)

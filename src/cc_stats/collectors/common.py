@@ -1,13 +1,11 @@
-from __future__ import annotations
-
 from collections import Counter
-from typing import Any, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from ..models import ToolCallRecord
 from ..utils import compact_ws, safe_float, safe_int
 
 
-def iter_content_blocks(content: Any) -> list[Any]:
+def iter_content_blocks(content: Any) -> List[Any]:
     if content is None:
         return []
     if isinstance(content, list):
@@ -16,7 +14,7 @@ def iter_content_blocks(content: Any) -> list[Any]:
 
 
 def extract_text_from_content(content: Any, include_tool_results: bool = False) -> str:
-    parts: list[str] = []
+    parts = []
     for block in iter_content_blocks(content):
         if isinstance(block, str):
             if compact_ws(block):
@@ -44,16 +42,16 @@ def extract_text_from_content(content: Any, include_tool_results: bool = False) 
     return "\n".join(parts).strip()
 
 
-def extract_tool_results(content: Any) -> list[dict[str, Any]]:
-    results: list[dict[str, Any]] = []
+def extract_tool_results(content: Any) -> List[Dict[str, Any]]:
+    results = []
     for block in iter_content_blocks(content):
         if isinstance(block, dict) and block.get("type") == "tool_result":
             results.append(block)
     return results
 
 
-def extract_tool_uses(content: Any, message: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-    tool_uses: list[dict[str, Any]] = []
+def extract_tool_uses(content: Any, message: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    tool_uses = []
     for block in iter_content_blocks(content):
         if isinstance(block, dict) and block.get("type") in {"tool_use", "mcp_tool_use"}:
             tool_uses.append(block)
@@ -73,7 +71,7 @@ def extract_tool_uses(content: Any, message: dict[str, Any] | None = None) -> li
     return tool_uses
 
 
-def classify_tool_name(name: str | None, payload: dict[str, Any] | None = None) -> tuple[str, str | None, str | None, str | None]:
+def classify_tool_name(name: Optional[str], payload: Optional[Dict[str, Any]] = None) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
     tool_name = (name or "").strip()
     lowered = tool_name.lower()
     payload = payload or {}
@@ -94,13 +92,13 @@ def classify_tool_name(name: str | None, payload: dict[str, Any] | None = None) 
     return "builtin", None, None, None
 
 
-def normalize_tool_payload(raw_input: Any) -> dict[str, Any]:
+def normalize_tool_payload(raw_input: Any) -> Dict[str, Any]:
     if isinstance(raw_input, dict):
         return raw_input
     return {"value": raw_input}
 
 
-def attach_tool_result(tool_calls_by_id: dict[str, ToolCallRecord], tool_use_id: str | None, content: Any, is_error: bool | None) -> None:
+def attach_tool_result(tool_calls_by_id: Dict[str, ToolCallRecord], tool_use_id: Optional[str], content: Any, is_error: Optional[bool]) -> None:
     if not tool_use_id or tool_use_id not in tool_calls_by_id:
         return
     tool = tool_calls_by_id[tool_use_id]
@@ -112,7 +110,7 @@ def attach_tool_result(tool_calls_by_id: dict[str, ToolCallRecord], tool_use_id:
             tool.error_text = output_text
 
 
-def collect_usage_from_assistant_message(message: dict[str, Any]) -> dict[str, float]:
+def collect_usage_from_assistant_message(message: Dict[str, Any]) -> Dict[str, float]:
     usage = message.get("usage") or {}
     cache_creation = usage.get("cache_creation") or {}
     return {
@@ -126,15 +124,15 @@ def collect_usage_from_assistant_message(message: dict[str, Any]) -> dict[str, f
     }
 
 
-def primary_from_counter(counter: Counter[str]) -> str | None:
+def primary_from_counter(counter: Counter) -> Optional[str]:
     if not counter:
         return None
     return counter.most_common(1)[0][0]
 
 
-def distinct_nonempty(values: Iterable[str | None]) -> list[str]:
-    seen: set[str] = set()
-    ordered: list[str] = []
+def distinct_nonempty(values: Iterable[Optional[str]]) -> List[str]:
+    seen = set()
+    ordered = []
     for value in values:
         if not value:
             continue

@@ -1,7 +1,6 @@
-from __future__ import annotations
-
 import os
 from pathlib import Path
+from typing import List, Optional, Tuple
 
 from .utils import path_slug, read_jsonc, unique_paths
 
@@ -17,12 +16,12 @@ def claude_projects_dir() -> Path:
     return CLAUDE_DIR / "projects"
 
 
-def project_claude_settings_path(project_dir: Path | None = None) -> Path:
+def project_claude_settings_path(project_dir: Optional[Path] = None) -> Path:
     root = project_dir or Path.cwd()
     return root / ".claude" / "settings.json"
 
 
-def find_claude_transcript(session_id: str, cwd: str | None = None) -> Path | None:
+def find_claude_transcript(session_id: str, cwd: Optional[str] = None) -> Optional[Path]:
     if cwd:
         slug = path_slug(cwd)
         candidate = claude_projects_dir() / slug / f"{session_id}.jsonl"
@@ -38,7 +37,7 @@ def find_claude_transcript(session_id: str, cwd: str | None = None) -> Path | No
     return None
 
 
-def candidate_editor_roots() -> list[tuple[Path, Path]]:
+def candidate_editor_roots() -> List[Tuple[Path, Path]]:
     if os.name == "nt":
         appdata = Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming")
         roots = [
@@ -68,8 +67,8 @@ def candidate_editor_roots() -> list[tuple[Path, Path]]:
     return unique_paths(pairs)
 
 
-def candidate_costrict_storage_paths() -> list[Path]:
-    results: list[Path] = []
+def candidate_costrict_storage_paths() -> List[Path]:
+    results = []
     env_override = os.environ.get("COSTRICT_STORAGE_PATH")
     if env_override:
         results.append(Path(env_override).expanduser())
@@ -103,7 +102,7 @@ def candidate_costrict_storage_paths() -> list[Path]:
             if "costrict" in name or name.startswith("zgsm-ai.") or "roo" in name:
                 results.append(candidate)
 
-    expanded: list[Path] = []
+    expanded = []
     for path in unique_paths(results):
         if path.name == "tasks":
             expanded.append(path.parent)

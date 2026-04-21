@@ -1,21 +1,20 @@
-from __future__ import annotations
-
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from .utils import ensure_dir, read_json, write_json
 
 
 @dataclass
 class ClientConfig:
-    server_url: str | None = None
-    ingest_token: str | None = None
+    server_url: Optional[str] = None
+    ingest_token: Optional[str] = None
 
-    def resolve_server_url(self) -> str | None:
+    def resolve_server_url(self) -> Optional[str]:
         return os.environ.get("CC_STATS_SERVER_URL") or self.server_url
 
-    def resolve_ingest_token(self) -> str | None:
+    def resolve_ingest_token(self) -> Optional[str]:
         return os.environ.get("CC_STATS_INGEST_TOKEN") or self.ingest_token
 
 

@@ -1,10 +1,9 @@
-from __future__ import annotations
-
 import time
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional, Set, Tuple
 
+from ..analysis import enrich_session
 from ..classification import classify_session, summarize_session
 from ..config import watcher_state_path
 from ..models import SessionRecord, ToolCallRecord, TurnRecord
@@ -36,15 +35,15 @@ from .common import (
 )
 
 
-def _load_state() -> dict[str, Any]:
+def _load_state() -> Dict[str, Any]:
     return read_json(watcher_state_path(), default={"tasks": {}}) or {"tasks": {}}
 
 
-def _save_state(state: dict[str, Any]) -> None:
+def _save_state(state: Dict[str, Any]) -> None:
     write_json(watcher_state_path(), state)
 
 
-def _task_files(task_dir: Path) -> list[Path]:
+def _task_files(task_dir: Path) -> List[Path]:
     return [
         task_dir / "api_conversation_history.json",
         task_dir / "ui_messages.json",
@@ -57,13 +56,13 @@ def _is_costrict_task_dir(task_dir: Path) -> bool:
     return task_dir.is_dir() and any(path.exists() for path in _task_files(task_dir))
 
 
-def _parse_api_messages(session_id: str, messages: list[dict[str, Any]]) -> tuple[list[TurnRecord], list[ToolCallRecord], Counter[str], list[str]]:
-    turns: list[TurnRecord] = []
-    tool_calls: list[ToolCallRecord] = []
-    tool_calls_by_id: dict[str, ToolCallRecord] = {}
-    current_turn: TurnRecord | None = None
+def _parse_api_messages(session_id: str, messages: List[Dict[str, Any]]) -> Tuple[List[TurnRecord], List[ToolCallRecord], Counter, List[str]]:
+    turns = []
+    tool_calls = []
+    tool_calls_by_id = {}
+    current_turn = None  # type: Optional[TurnRecord]
     models = Counter()
-    summary_texts: list[str] = []
+    summary_texts = []
 
     for message in messages:
         role = message.get("role")
@@ -149,10 +148,10 @@ def _parse_api_messages(session_id: str, messages: list[dict[str, Any]]) -> tupl
     return turns, tool_calls, models, summary_texts
 
 
-def _parse_ui_messages(session_id: str, messages: list[dict[str, Any]]) -> tuple[list[TurnRecord], list[str]]:
-    turns: list[TurnRecord] = []
-    current_turn: TurnRecord | None = None
-    summary_texts: list[str] = []
+def _parse_ui_messages(session_id: str, messages: List[Dict[str, Any]]) -> Tuple[List[TurnRecord], List[str]]:
+    turns = []
+    current_turn = None  # type: Optional[TurnRecord]
+    summary_texts = []
     for message in messages:
         timestamp = unix_ms_to_iso(message.get("ts"))
         msg_type = message.get("type")
@@ -284,11 +283,11 @@ def parse_costrict_task(task_dir: Path, storage_root: Path) -> SessionRecord:
         turns=turns,
         tool_calls=tool_calls,
     )
-    return session
+    return enrich_session(session)
 
 
-def discover_costrict_task_dirs() -> list[tuple[Path, Path]]:
-    pairs: list[tuple[Path, Path]] = []
+def discover_costrict_task_dirs() -> List[Tuple[Path, Path]]:
+    pairs = []
     for storage_root in candidate_costrict_storage_paths():
         tasks_dir = storage_root / "tasks"
         if not tasks_dir.exists():
@@ -299,11 +298,11 @@ def discover_costrict_task_dirs() -> list[tuple[Path, Path]]:
     return pairs
 
 
-def scan_costrict_once(changed_only: bool = False) -> list[SessionRecord]:
+def scan_costrict_once(changed_only: bool = False) -> List[SessionRecord]:
     state = _load_state()
     tracked = state.setdefault("tasks", {})
-    sessions: list[SessionRecord] = []
-    seen_keys: set[str] = set()
+    sessions = []
+    seen_keys = set()  # type: Set[str]
 
     for storage_root, task_dir in discover_costrict_task_dirs():
         signature = compute_file_signature(_task_files(task_dir))
@@ -324,8 +323,8 @@ def scan_costrict_once(changed_only: bool = False) -> list[SessionRecord]:
     return sessions
 
 
-def watch_costrict_loop(interval: int = 20) -> list[SessionRecord]:
-    latest: list[SessionRecord] = []
+def watch_costrict_loop(interval: int = 20) -> List[SessionRecord]:
+    latest = []
     while True:
         latest = scan_costrict_once(changed_only=True)
         time.sleep(interval)

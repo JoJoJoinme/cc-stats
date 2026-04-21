@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import argparse
 import json
 import os
@@ -8,6 +6,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from .collectors import backfill_claude, build_session_from_claude_hook, scan_costrict_once
 from .config import ClientConfig, load_client_config, save_client_config
@@ -24,7 +23,7 @@ def _python_executable() -> str:
     return sys.executable
 
 
-def _claude_executable() -> str | None:
+def _claude_executable() -> Optional[str]:
     return shutil.which("claude")
 
 
@@ -32,7 +31,7 @@ def _project_hook_dir(project_dir: Path) -> Path:
     return project_dir / ".claude" / "hooks"
 
 
-def _write_project_hook_wrappers(project_dir: Path) -> dict:
+def _write_project_hook_wrappers(project_dir: Path) -> Dict[str, str]:
     hook_dir = _project_hook_dir(project_dir)
     ensure_dir(hook_dir)
 
@@ -83,7 +82,7 @@ exit 1
     return {"shell": str(shell_script), "powershell": str(powershell_script)}
 
 
-def _default_hook_command(project_dir: Path | None = None, scope: str = "user") -> str:
+def _default_hook_command(project_dir: Optional[Path] = None, scope: str = "user") -> str:
     root = (project_dir or Path.cwd()).resolve()
     if scope == "project":
         if os.name == "nt":
@@ -92,7 +91,7 @@ def _default_hook_command(project_dir: Path | None = None, scope: str = "user") 
     return f'"{_python_executable()}" -m cc_stats.cli client ingest-claude-hook'
 
 
-def _install_user_launcher(project_root: Path) -> dict:
+def _install_user_launcher(project_root: Path) -> Dict[str, str]:
     if os.name == "nt":
         base_dir = Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "cc-stats" / "bin"
         ensure_dir(base_dir)
@@ -116,17 +115,24 @@ def _install_user_launcher(project_root: Path) -> dict:
     return {"path": str(launcher_path), "project_root": str(project_root)}
 
 
-def _run_command(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, cwd=str(cwd) if cwd else None, check=False, capture_output=True, text=True)
+def _run_command(cmd: List[str], cwd: Optional[Path] = None):
+    return subprocess.run(
+        cmd,
+        cwd=str(cwd) if cwd else None,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
 
 
-def _connect_db(db_path: str | None):
+def _connect_db(db_path: Optional[str]):
     from .server.db import connect_db
 
     return connect_db(db_path)
 
 
-def _create_server_app(db_path: str | None, auth_token: str | None):
+def _create_server_app(db_path: Optional[str], auth_token: Optional[str]):
     try:
         from .server import create_app
     except ModuleNotFoundError as exc:
@@ -147,7 +153,7 @@ def _run_server(app, host: str, port: int) -> None:
     uvicorn.run(app, host=host, port=port)
 
 
-def _install_claude_plugin(project_root: Path, scope: str) -> dict:
+def _install_claude_plugin(project_root: Path, scope: str) -> Dict[str, Any]:
     claude = _claude_executable()
     if not claude:
         raise RuntimeError("claude CLI not found in PATH")
@@ -185,7 +191,7 @@ def _install_claude_plugin(project_root: Path, scope: str) -> dict:
     }
 
 
-def _hook_config(command: str, powershell: bool = False) -> dict:
+def _hook_config(command: str, powershell: bool = False) -> Dict[str, Any]:
     hook = {
         "type": "command",
         "command": command,
@@ -202,7 +208,7 @@ def _hook_config(command: str, powershell: bool = False) -> dict:
     }
 
 
-def _merge_hooks(settings: dict, command: str, powershell: bool = False) -> dict:
+def _merge_hooks(settings: Dict[str, Any], command: str, powershell: bool = False) -> Dict[str, Any]:
     settings = settings or {}
     hooks = settings.setdefault("hooks", {})
     for event in ("Stop", "SessionEnd"):
@@ -222,7 +228,7 @@ def _merge_hooks(settings: dict, command: str, powershell: bool = False) -> dict
     return settings
 
 
-def _install_claude_hooks(scope: str, project_dir: Path, command: str | None = None) -> dict:
+def _install_claude_hooks(scope: str, project_dir: Path, command: Optional[str] = None) -> Dict[str, Any]:
     target = claude_settings_path() if scope == "user" else project_claude_settings_path(project_dir)
     ensure_dir(target.parent)
     settings = read_json(target, default={}) or {}
@@ -283,8 +289,20 @@ WantedBy=default.target
     enabled = False
     message = "service file written"
     try:
-        subprocess.run(["systemctl", "--user", "daemon-reload"], check=True, capture_output=True, text=True)
-        subprocess.run(["systemctl", "--user", "enable", "--now", "cc-stats-costrict-client.service"], check=True, capture_output=True, text=True)
+        subprocess.run(
+            ["systemctl", "--user", "daemon-reload"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        subprocess.run(
+            ["systemctl", "--user", "enable", "--now", "cc-stats-costrict-client.service"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
         enabled = True
         message = "enabled with systemctl --user"
     except Exception as exc:
@@ -315,7 +333,9 @@ def _install_costrict_autostart(project_root: Path, interval: int) -> dict:
 
 def cmd_client_install_claude_hooks(args: argparse.Namespace) -> int:
     result = _install_claude_hooks(args.scope, Path(args.project_dir).resolve(), args.command)
-    _print({"ok": True} | result)
+    payload = {"ok": True}
+    payload.update(result)
+    _print(payload)
     return 0
 
 
@@ -338,16 +358,16 @@ def cmd_client_install(args: argparse.Namespace) -> int:
 
     if args.claude_mode == "plugin" or (args.claude_mode == "auto" and _claude_executable()):
         try:
-            install_result["claude"] = {"mode": "plugin"} | _install_claude_plugin(project_root, args.scope)
+            install_result["claude"] = {"mode": "plugin"}
+            install_result["claude"].update(_install_claude_plugin(project_root, args.scope))
         except Exception as exc:
             if args.claude_mode == "plugin":
                 raise
             install_result["claude"] = {"mode": "plugin", "ok": False, "error": str(exc), "fallback": "hooks"}
-            install_result["claude"] = install_result["claude"] | {
-                "hook_settings": _install_claude_hooks(args.scope, project_root)
-            }
+            install_result["claude"]["hook_settings"] = _install_claude_hooks(args.scope, project_root)
     elif args.claude_mode == "hooks":
-        install_result["claude"] = {"mode": "hooks"} | _install_claude_hooks(args.scope, project_root)
+        install_result["claude"] = {"mode": "hooks"}
+        install_result["claude"].update(_install_claude_hooks(args.scope, project_root))
 
     if not args.no_autostart:
         install_result["autostart"] = _install_costrict_autostart(project_root, args.interval)
@@ -356,7 +376,8 @@ def cmd_client_install(args: argparse.Namespace) -> int:
         try:
             sessions = backfill_claude(limit=args.backfill_limit)
             result = _send_sessions(sessions, args.server_url, args.ingest_token)
-            install_result["backfill"] = result | {"local_sessions": len(sessions)}
+            install_result["backfill"] = dict(result)
+            install_result["backfill"]["local_sessions"] = len(sessions)
         except Exception as exc:
             install_result["backfill"] = {"ok": False, "error": str(exc)}
 
@@ -364,7 +385,8 @@ def cmd_client_install(args: argparse.Namespace) -> int:
         try:
             sessions = scan_costrict_once(changed_only=False)
             result = _send_sessions(sessions, args.server_url, args.ingest_token)
-            install_result["costrict_scan"] = result | {"local_sessions": len(sessions)}
+            install_result["costrict_scan"] = dict(result)
+            install_result["costrict_scan"]["local_sessions"] = len(sessions)
         except Exception as exc:
             install_result["costrict_scan"] = {"ok": False, "error": str(exc)}
 
@@ -375,22 +397,22 @@ def cmd_client_install(args: argparse.Namespace) -> int:
 def cmd_client_ingest_claude_hook(args: argparse.Namespace) -> int:
     payload = load_stdin_json()
     session = build_session_from_claude_hook(payload)
-    result = send_session(session.to_row() | {"turns": [turn.to_row() for turn in session.turns], "tool_calls": [call.to_row() for call in session.tool_calls]}, args.server_url, args.ingest_token)
+    session_payload = session.to_row()
+    session_payload["turns"] = [turn.to_row() for turn in session.turns]
+    session_payload["tool_calls"] = [call.to_row() for call in session.tool_calls]
+    result = send_session(session_payload, args.server_url, args.ingest_token)
     _print(result)
     return 0
 
 
-def _send_sessions(sessions, server_url: str | None, ingest_token: str | None) -> dict:
+def _send_sessions(sessions, server_url: Optional[str], ingest_token: Optional[str]) -> Dict[str, Any]:
     resolved_server, token = resolve_server_and_token(server_url, ingest_token)
     payload = []
     for session in sessions:
-        payload.append(
-            session.to_row()
-            | {
-                "turns": [turn.to_row() for turn in session.turns],
-                "tool_calls": [call.to_row() for call in session.tool_calls],
-            }
-        )
+        session_payload = session.to_row()
+        session_payload["turns"] = [turn.to_row() for turn in session.turns]
+        session_payload["tool_calls"] = [call.to_row() for call in session.tool_calls]
+        payload.append(session_payload)
     if not payload:
         return {"ok": True, "count": 0}
     return post_json(f"{resolved_server}/api/v1/ingest/batch", payload, token=token)
@@ -399,14 +421,18 @@ def _send_sessions(sessions, server_url: str | None, ingest_token: str | None) -
 def cmd_client_backfill_claude(args: argparse.Namespace) -> int:
     sessions = backfill_claude(limit=args.limit)
     result = _send_sessions(sessions, args.server_url, args.ingest_token)
-    _print(result | {"local_sessions": len(sessions)})
+    payload = dict(result)
+    payload["local_sessions"] = len(sessions)
+    _print(payload)
     return 0
 
 
 def cmd_client_scan_costrict(args: argparse.Namespace) -> int:
     sessions = scan_costrict_once(changed_only=args.changed_only)
     result = _send_sessions(sessions, args.server_url, args.ingest_token)
-    _print(result | {"local_sessions": len(sessions)})
+    payload = dict(result)
+    payload["local_sessions"] = len(sessions)
+    _print(payload)
     return 0
 
 
@@ -416,7 +442,9 @@ def cmd_client_watch_costrict(args: argparse.Namespace) -> int:
         sessions = scan_costrict_once(changed_only=True)
         if sessions:
             result = _send_sessions(sessions, args.server_url, args.ingest_token)
-            _print(result | {"local_sessions": len(sessions)})
+            payload = dict(result)
+            payload["local_sessions"] = len(sessions)
+            _print(payload)
         time.sleep(interval)
 
 
@@ -471,8 +499,20 @@ WantedBy={install_target}
     enabled = False
     message = "service file written"
     try:
-        subprocess.run(command + ["daemon-reload"], check=True, capture_output=True, text=True)
-        subprocess.run(command + ["enable", "--now", service_name], check=True, capture_output=True, text=True)
+        subprocess.run(
+            command + ["daemon-reload"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        subprocess.run(
+            command + ["enable", "--now", service_name],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
         enabled = True
         message = f"enabled with {' '.join(command)}"
     except Exception as exc:
@@ -494,13 +534,13 @@ WantedBy={install_target}
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="cc-stats")
-    root_subparsers = parser.add_subparsers(dest="area", required=True)
+    root_subparsers = parser.add_subparsers(dest="area")
 
     client = root_subparsers.add_parser("client")
-    client_subparsers = client.add_subparsers(dest="client_command", required=True)
+    client_subparsers = client.add_subparsers(dest="client_command")
 
     config_parser = client_subparsers.add_parser("config")
-    config_subparsers = config_parser.add_subparsers(dest="config_command", required=True)
+    config_subparsers = config_parser.add_subparsers(dest="config_command")
     config_show = config_subparsers.add_parser("show")
     config_show.set_defaults(func=cmd_client_config_show)
     config_set = config_subparsers.add_parser("set")
@@ -551,7 +591,7 @@ def build_parser() -> argparse.ArgumentParser:
     watch_costrict.set_defaults(func=cmd_client_watch_costrict)
 
     server = root_subparsers.add_parser("server")
-    server_subparsers = server.add_subparsers(dest="server_command", required=True)
+    server_subparsers = server.add_subparsers(dest="server_command")
 
     init_db = server_subparsers.add_parser("init-db")
     init_db.add_argument("--db-path")
@@ -576,9 +616,12 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if not hasattr(args, "func"):
+        parser.print_help()
+        return 2
     try:
         return int(args.func(args))
     except KeyboardInterrupt:

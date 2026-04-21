@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import hashlib
 import json
 import os
@@ -9,7 +7,7 @@ import socket
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 
 def utc_now() -> str:
@@ -32,8 +30,8 @@ def read_json(path: Path, default: Any = None) -> Any:
         return default
 
 
-def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
+def read_jsonl(path: Path) -> List[Dict[str, Any]]:
+    rows = []
     with path.open("r", encoding="utf-8") as handle:
         for line in handle:
             line = line.strip()
@@ -55,7 +53,7 @@ def json_dumps(payload: Any) -> str:
     return json.dumps(payload, ensure_ascii=False, sort_keys=True)
 
 
-def parse_iso8601(value: str | None) -> datetime | None:
+def parse_iso8601(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
     try:
@@ -65,18 +63,18 @@ def parse_iso8601(value: str | None) -> datetime | None:
         return None
 
 
-def iso_to_unix(value: str | None) -> float | None:
+def iso_to_unix(value: Optional[str]) -> Optional[float]:
     dt = parse_iso8601(value)
     return dt.timestamp() if dt else None
 
 
-def unix_ms_to_iso(value: int | float | None) -> str | None:
+def unix_ms_to_iso(value: Optional[Union[int, float]]) -> Optional[str]:
     if value is None:
         return None
     return datetime.fromtimestamp(float(value) / 1000.0, tz=timezone.utc).isoformat()
 
 
-def duration_seconds(start: str | None, end: str | None) -> int | None:
+def duration_seconds(start: Optional[str], end: Optional[str]) -> Optional[int]:
     start_dt = parse_iso8601(start)
     end_dt = parse_iso8601(end)
     if not start_dt or not end_dt:
@@ -84,13 +82,13 @@ def duration_seconds(start: str | None, end: str | None) -> int | None:
     return max(0, int((end_dt - start_dt).total_seconds()))
 
 
-def compact_ws(value: str | None) -> str:
+def compact_ws(value: Optional[str]) -> str:
     if not value:
         return ""
     return re.sub(r"\s+", " ", value).strip()
 
 
-def shorten(value: str | None, limit: int = 180) -> str:
+def shorten(value: Optional[str], limit: int = 180) -> str:
     text = compact_ws(value)
     if len(text) <= limit:
         return text
@@ -98,7 +96,7 @@ def shorten(value: str | None, limit: int = 180) -> str:
 
 
 def strip_json_comments(raw: str) -> str:
-    result: list[str] = []
+    result = []
     i = 0
     in_string = False
     in_single = False
@@ -158,15 +156,15 @@ def read_jsonc(path: Path, default: Any = None) -> Any:
         return default
 
 
-def path_slug(path: str | Path) -> str:
+def path_slug(path: Union[str, Path]) -> str:
     value = str(path).replace("\\", "/")
     value = value.replace("/", "-")
     return value or "-"
 
 
-def unique_paths(paths: Iterable[Path]) -> list[Path]:
-    seen: set[str] = set()
-    ordered: list[Path] = []
+def unique_paths(paths: Iterable[Path]) -> List[Path]:
+    seen = set()
+    ordered = []
     for path in paths:
         key = str(path)
         if key in seen:
@@ -198,15 +196,16 @@ def sum_float(values: Iterable[Any]) -> float:
     return float(sum(safe_float(value, 0.0) for value in values))
 
 
-def detect_git_root(cwd: str | None) -> str | None:
+def detect_git_root(cwd: Optional[str]) -> Optional[str]:
     if not cwd:
         return None
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
             cwd=cwd,
-            capture_output=True,
-            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
             check=False,
         )
         if result.returncode == 0:
@@ -216,15 +215,16 @@ def detect_git_root(cwd: str | None) -> str | None:
     return None
 
 
-def detect_git_branch(cwd: str | None) -> str | None:
+def detect_git_branch(cwd: Optional[str]) -> Optional[str]:
     if not cwd:
         return None
     try:
         result = subprocess.run(
             ["git", "branch", "--show-current"],
             cwd=cwd,
-            capture_output=True,
-            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
             check=False,
         )
         if result.returncode == 0:
@@ -235,14 +235,14 @@ def detect_git_branch(cwd: str | None) -> str | None:
     return None
 
 
-def detect_repo_name(cwd: str | None) -> str | None:
+def detect_repo_name(cwd: Optional[str]) -> Optional[str]:
     root = detect_git_root(cwd) or cwd
     if not root:
         return None
     return Path(root).name
 
 
-def detect_user_id(cwd: str | None = None) -> str:
+def detect_user_id(cwd: Optional[str] = None) -> str:
     env_override = os.environ.get("CC_STATS_USER_ID")
     if env_override:
         return env_override
@@ -250,8 +250,9 @@ def detect_user_id(cwd: str | None = None) -> str:
         result = subprocess.run(
             ["git", "config", "user.email"],
             cwd=cwd or None,
-            capture_output=True,
-            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
             check=False,
         )
         if result.returncode == 0 and result.stdout.strip():
@@ -285,7 +286,7 @@ def compute_file_signature(paths: Iterable[Path]) -> str:
     return digest.hexdigest()
 
 
-def load_stdin_json() -> dict[str, Any]:
+def load_stdin_json() -> Dict[str, Any]:
     raw = ""
     try:
         raw = os.read(0, 10_000_000).decode("utf-8")

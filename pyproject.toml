@@ -7,8 +7,10 @@ name = "cc-stats"
 version = "0.1.0"
 description = "Cross-platform AI usage analytics for Claude Code and costrict IDE"
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = []
+requires-python = ">=3.6"
+dependencies = [
+  "dataclasses; python_version < '3.7'",
+]
 
 [project.optional-dependencies]
 server = [

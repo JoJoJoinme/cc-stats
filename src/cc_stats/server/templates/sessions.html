@@ -26,6 +26,7 @@
         <option value="turns" {% if filters.sort == "turns" %}selected{% endif %}>turns</option>
         <option value="tokens" {% if filters.sort == "tokens" %}selected{% endif %}>tokens</option>
         <option value="cost" {% if filters.sort == "cost" %}selected{% endif %}>cost</option>
+        <option value="quality" {% if filters.sort == "quality" %}selected{% endif %}>quality</option>
       </select>
     </div>
     <button type="submit">Apply</button>
@@ -40,12 +41,13 @@
         <th>Time</th>
         <th>Source</th>
         <th>User</th>
-        <th>Repo</th>
         <th>Category</th>
+        <th>Quality</th>
+        <th>Outcome</th>
+        <th>Pattern</th>
         <th>Turns</th>
         <th>Tools</th>
-        <th>Model</th>
-        <th>Summary</th>
+        <th>Case</th>
       </tr>
     </thead>
     <tbody>
@@ -54,12 +56,22 @@
         <td><a href="/sessions/{{ item.session_id }}">{{ item.started_at or item.ended_at or item.session_id }}</a></td>
         <td><span class="pill">{{ item.source }}</span></td>
         <td><a href="/users/{{ item.user_id }}">{{ item.user_id }}</a></td>
-        <td>{{ item.repo or "" }}</td>
         <td>{{ item.category }}</td>
+        <td>
+          <span class="pill {% if item.quality_label == 'strong' %}strong{% elif item.quality_label == 'needs_review' %}needs-review{% else %}mixed{% endif %}">
+            {{ item.quality_label_text }} · {{ item.quality_score }}
+          </span>
+        </td>
+        <td><span class="pill outcome">{{ item.outcome_status }}</span></td>
+        <td>{{ item.work_pattern_label }}</td>
         <td>{{ item.turn_count }}</td>
         <td>{{ item.tool_call_count }}</td>
-        <td>{{ item.model_primary or "" }}</td>
-        <td>{{ item.summary }}</td>
+        <td>
+          <div><strong>{{ item.case_title }}</strong></div>
+          <div class="muted small">
+            {{ item.repo or "no repo" }} · follow-ups {{ item.followup_turns }} · {{ item.tool_path_text }}
+          </div>
+        </td>
       </tr>
       {% endfor %}
     </tbody>

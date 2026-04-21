@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -9,20 +7,20 @@ class ToolCallRecord:
     session_id: str
     turn_idx: int
     call_idx: int
-    ts: str | None
+    ts: Optional[str]
     tool_name: str
     tool_kind: str
-    skill_name: str | None = None
-    mcp_server: str | None = None
-    subagent_type: str | None = None
-    success: bool | None = None
+    skill_name: Optional[str] = None
+    mcp_server: Optional[str] = None
+    subagent_type: Optional[str] = None
+    success: Optional[bool] = None
     input_size: int = 0
     output_size: int = 0
-    error_text: str | None = None
-    raw_json: dict[str, Any] = field(default_factory=dict)
-    tool_use_id: str | None = None
+    error_text: Optional[str] = None
+    raw_json: Dict[str, Any] = field(default_factory=dict)
+    tool_use_id: Optional[str] = None
 
-    def to_row(self) -> dict[str, Any]:
+    def to_row(self) -> Dict[str, Any]:
         row = asdict(self)
         row["raw_json"] = self.raw_json
         return row
@@ -32,17 +30,17 @@ class ToolCallRecord:
 class TurnRecord:
     session_id: str
     turn_idx: int
-    started_at: str | None = None
-    ended_at: str | None = None
+    started_at: Optional[str] = None
+    ended_at: Optional[str] = None
     user_text: str = ""
     assistant_text: str = ""
     user_prompt_chars: int = 0
     assistant_chars: int = 0
     tool_call_count: int = 0
-    duration_sec: int | None = None
-    category_hint: str | None = None
+    duration_sec: Optional[int] = None
+    category_hint: Optional[str] = None
 
-    def to_row(self) -> dict[str, Any]:
+    def to_row(self) -> Dict[str, Any]:
         return asdict(self)
 
 
@@ -54,19 +52,19 @@ class SessionRecord:
     user_id: str
     host_name: str
     platform: str
-    started_at: str | None = None
-    ended_at: str | None = None
-    duration_sec: int | None = None
+    started_at: Optional[str] = None
+    ended_at: Optional[str] = None
+    duration_sec: Optional[int] = None
     turn_count: int = 0
     assistant_turn_count: int = 0
     user_turn_count: int = 0
-    repo: str | None = None
-    cwd: str | None = None
-    git_branch: str | None = None
+    repo: Optional[str] = None
+    cwd: Optional[str] = None
+    git_branch: Optional[str] = None
     tool_call_count: int = 0
     tool_diversity: int = 0
-    model_primary: str | None = None
-    models: list[str] = field(default_factory=list)
+    model_primary: Optional[str] = None
+    models: List[str] = field(default_factory=list)
     total_input_tokens: int = 0
     total_output_tokens: int = 0
     total_cache_creation_tokens: int = 0
@@ -78,17 +76,17 @@ class SessionRecord:
     has_skill: bool = False
     has_mcp: bool = False
     has_subagent: bool = False
-    raw_path: str | None = None
-    raw_payload: dict[str, Any] = field(default_factory=dict)
-    last_message_uuid: str | None = None
-    status: str | None = None
-    parent_native_session_id: str | None = None
-    root_native_session_id: str | None = None
-    extra_json: dict[str, Any] = field(default_factory=dict)
-    turns: list[TurnRecord] = field(default_factory=list)
-    tool_calls: list[ToolCallRecord] = field(default_factory=list)
+    raw_path: Optional[str] = None
+    raw_payload: Dict[str, Any] = field(default_factory=dict)
+    last_message_uuid: Optional[str] = None
+    status: Optional[str] = None
+    parent_native_session_id: Optional[str] = None
+    root_native_session_id: Optional[str] = None
+    extra_json: Dict[str, Any] = field(default_factory=dict)
+    turns: List[TurnRecord] = field(default_factory=list)
+    tool_calls: List[ToolCallRecord] = field(default_factory=list)
 
-    def to_row(self) -> dict[str, Any]:
+    def to_row(self) -> Dict[str, Any]:
         row = asdict(self)
         row.pop("turns", None)
         row.pop("tool_calls", None)

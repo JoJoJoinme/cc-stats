@@ -1,69 +1,505 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card" style="margin-bottom:18px;">
-  <h1>Session Detail</h1>
-  <div class="muted">{{ session.session_id }}</div>
-  <div class="muted" style="margin-top:6px;">Source: {{ session.source }}</div>
-  <div style="margin-top:10px;">
+<style>
+  .session-hero {
+    margin-bottom: 18px;
+  }
+  .session-shell {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+  .session-sidebar {
+    position: sticky;
+    top: 18px;
+  }
+  .sidebar-section + .sidebar-section {
+    margin-top: 18px;
+  }
+  .turn-nav {
+    display: grid;
+    gap: 8px;
+    max-height: 440px;
+    overflow: auto;
+    padding-right: 4px;
+  }
+  .turn-link {
+    display: block;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+  }
+  .turn-link:hover {
+    background: #f8f4ec;
+    text-decoration: none;
+  }
+  .turn-link-title {
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .turn-link-meta {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .transcript-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .filter-btn {
+    width: auto;
+    padding: 8px 12px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .filter-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  .transcript {
+    display: grid;
+    gap: 18px;
+  }
+  .turn-block {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255, 253, 248, 0.9);
+    padding: 16px;
+    box-shadow: 0 6px 28px rgba(38, 34, 25, 0.05);
+  }
+  .turn-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .turn-header-main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .turn-body {
+    display: grid;
+    gap: 14px;
+  }
+  .message {
+    max-width: 92%;
+  }
+  .message.user {
+    justify-self: end;
+  }
+  .message.assistant {
+    justify-self: start;
+  }
+  .message-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    color: var(--muted);
+  }
+  .bubble {
+    border-radius: 18px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    white-space: pre-wrap;
+    line-height: 1.55;
+  }
+  .message-meta {
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .message-context {
+    margin-top: 8px;
+  }
+  .message-context summary {
+    cursor: pointer;
+  }
+  .message-context .soft + .soft {
+    margin-top: 8px;
+  }
+  .message.user .bubble {
+    background: linear-gradient(135deg, #efe8db, #f8f3ea);
+  }
+  .message.assistant .bubble {
+    background: linear-gradient(135deg, #fffdf8, #f7f4ee);
+  }
+  .tool-drawer {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #f8f4ec;
+    overflow: hidden;
+  }
+  .tool-drawer summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 12px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .tool-drawer summary::-webkit-details-marker {
+    display: none;
+  }
+  .tool-list {
+    padding: 0 14px 14px;
+    display: grid;
+    gap: 10px;
+  }
+  .tool-item {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px;
+  }
+  .tool-item-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .tool-item-title {
+    font-weight: 700;
+  }
+  .tool-item-meta {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .tool-json {
+    margin-top: 8px;
+  }
+  .mini-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .mini-metric {
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+  }
+  .mini-metric-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+  }
+  .details-stack {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .raw-block summary {
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .raw-block pre {
+    margin-top: 12px;
+  }
+  @media (max-width: 1100px) {
+    .session-shell {
+      grid-template-columns: 1fr;
+    }
+    .session-sidebar {
+      position: static;
+    }
+  }
+</style>
+
+<div class="card session-hero">
+  <div class="eyebrow">Session Viewer</div>
+  <h1>{{ session.case_title }}</h1>
+  <div class="muted" style="margin-top:6px;">{{ session.session_id }}</div>
+  <div class="stack" style="margin-top:12px;">
     <span class="pill">{{ session.source }}</span>
     <span class="pill">{{ session.user_id }}</span>
     {% if session.repo %}<span class="pill">{{ session.repo }}</span>{% endif %}
     <span class="pill">{{ session.category }}</span>
     {% if session.model_primary %}<span class="pill">{{ session.model_primary }}</span>{% endif %}
     {% if session.status %}<span class="pill">{{ session.status }}</span>{% endif %}
+    <span class="pill {% if session.quality_label == 'strong' %}strong{% elif session.quality_label == 'needs_review' %}needs-review{% else %}mixed{% endif %}">
+      {{ session.quality_label_text }} · {{ session.quality_score }}
+    </span>
+    <span class="pill outcome">{{ session.outcome_status }}</span>
+    <span class="pill">{{ session.work_pattern_label }}</span>
   </div>
 </div>
 
-<div class="grid cards" style="margin-bottom:18px;">
-  <div class="card"><div class="muted">Turns</div><div class="metric">{{ session.turn_count }}</div></div>
-  <div class="card"><div class="muted">Tool Calls</div><div class="metric">{{ session.tool_call_count }}</div></div>
-  <div class="card"><div class="muted">Duration</div><div class="metric">{{ session.duration_sec or 0 }}s</div></div>
-  <div class="card"><div class="muted">Input Tokens</div><div class="metric">{{ session.total_input_tokens }}</div></div>
-  <div class="card"><div class="muted">Output Tokens</div><div class="metric">{{ session.total_output_tokens }}</div></div>
-  <div class="card"><div class="muted">Cost</div><div class="metric">{{ session.total_cost }}</div></div>
-</div>
-
-<div class="card" style="margin-bottom:18px;">
-  <h2>Summary</h2>
-  <div>{{ session.summary }}</div>
-</div>
-
-<div class="grid two">
-  <div class="card">
-    <h2>Turns</h2>
-    {% for turn in session.turns %}
-      <div style="padding:12px 0; border-bottom:1px solid #ded6c6;">
-        <div class="muted">Turn {{ turn.turn_idx }}{% if turn.duration_sec %} · {{ turn.duration_sec }}s{% endif %} · tools {{ turn.tool_call_count }}</div>
-        {% if turn.user_text %}
-          <h3>User</h3>
-          <pre>{{ turn.user_text }}</pre>
-        {% endif %}
-        {% if turn.assistant_text %}
-          <h3>Assistant</h3>
-          <pre>{{ turn.assistant_text }}</pre>
-        {% endif %}
+<div class="session-shell">
+  <aside class="session-sidebar">
+    <div class="card sidebar-section">
+      <div class="eyebrow">Overview</div>
+      <div class="mini-metrics">
+        <div class="mini-metric">
+          <div class="muted small">Turns</div>
+          <div class="mini-metric-value">{{ session.turn_count }}</div>
+        </div>
+        <div class="mini-metric">
+          <div class="muted small">Tools</div>
+          <div class="mini-metric-value">{{ session.tool_call_count }}</div>
+        </div>
+        <div class="mini-metric">
+          <div class="muted small">Duration</div>
+          <div class="mini-metric-value">{{ session.duration_sec or 0 }}s</div>
+        </div>
+        <div class="mini-metric">
+          <div class="muted small">Follow-ups</div>
+          <div class="mini-metric-value">{{ session.followup_turns }}</div>
+        </div>
       </div>
-    {% endfor %}
-  </div>
-  <div class="card">
-    <h2>Tool Calls</h2>
-    <table>
-      <thead><tr><th>Turn</th><th>Tool</th><th>Kind</th><th>Success</th></tr></thead>
-      <tbody>
-      {% for call in session.tool_calls %}
-        <tr>
-          <td>{{ call.turn_idx }}</td>
-          <td>{{ call.tool_name }}</td>
-          <td>{{ call.tool_kind }}</td>
-          <td>{{ call.success }}</td>
-        </tr>
+      <div class="soft small" style="margin-top:14px;">
+        <div class="eyebrow">Topic</div>
+        <div>{{ session.topic_signature }}</div>
+      </div>
+      <div class="soft small" style="margin-top:12px;">
+        <div class="eyebrow">Tool Path</div>
+        <div>{{ session.tool_path_text }}</div>
+      </div>
+      <div class="soft small" style="margin-top:12px;">
+        <div class="eyebrow">Prompt Tags</div>
+        <div class="stack">
+          {% for tag in session.prompt_tags %}
+            <span class="pill">{{ tag }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card sidebar-section">
+      <div class="eyebrow">What Worked</div>
+      {% for item in session.insights.strengths %}
+        <div class="small" style="margin-bottom:8px;">{{ item }}</div>
       {% endfor %}
-      </tbody>
-    </table>
-    <h2 style="margin-top:18px;">Raw Payload</h2>
-    <pre>{{ session.raw_payload }}</pre>
-    <h2 style="margin-top:18px;">Extra</h2>
-    <pre>{{ session.extra }}</pre>
-  </div>
+      {% if not session.insights.strengths %}
+        <div class="small muted">No explicit strength signal.</div>
+      {% endif %}
+    </div>
+
+    <div class="card sidebar-section">
+      <div class="eyebrow">Review Gaps</div>
+      {% if session.insights.gaps %}
+        {% for item in session.insights.gaps %}
+          <div class="small" style="margin-bottom:8px;">{{ item }}</div>
+        {% endfor %}
+      {% else %}
+        <div class="small muted">No obvious review gap.</div>
+      {% endif %}
+    </div>
+
+    <div class="card sidebar-section">
+      <div class="eyebrow">Turn Navigator</div>
+      <div class="turn-nav">
+        {% for item in session.turn_items %}
+          <a class="turn-link" href="#{{ item.anchor }}">
+            <div class="turn-link-title">{{ item.label }}</div>
+            <div class="turn-link-meta">{{ item.preview or "No text" }}</div>
+            {% if item.scaffold_only %}
+              <div class="turn-link-meta">setup/context scaffold</div>
+            {% endif %}
+            <div class="turn-link-meta">tools {{ item.tool_count }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="card transcript-toolbar">
+      <input id="turn-search" type="text" placeholder="Search this session..." />
+      <div class="filter-row">
+        <button type="button" class="filter-btn active" data-mode="all">All</button>
+        <button type="button" class="filter-btn" data-mode="user">User</button>
+        <button type="button" class="filter-btn" data-mode="assistant">Assistant</button>
+        <button type="button" class="filter-btn" data-mode="no-tools">No Tools</button>
+      </div>
+    </div>
+
+    <div class="transcript">
+      {% for turn in session.turns %}
+        <article
+          id="{{ turn.anchor }}"
+          class="turn-block"
+          data-search="{{ turn.search_text }}"
+          data-has-user="{{ 1 if turn.has_user else 0 }}"
+          data-has-assistant="{{ 1 if turn.has_assistant else 0 }}"
+          data-has-tools="{{ 1 if turn.calls else 0 }}"
+        >
+          <div class="turn-header">
+            <div class="turn-header-main">
+              <span class="pill">{{ "Turn " ~ turn.turn_idx }}</span>
+              {% if turn.duration_sec %}<span class="pill">{{ turn.duration_sec }}s</span>{% endif %}
+              <span class="pill">tools {{ turn.calls|length }}</span>
+            </div>
+            <div class="muted small">
+              {% if turn.started_at %}{{ turn.started_at }}{% elif turn.ended_at %}{{ turn.ended_at }}{% endif %}
+            </div>
+          </div>
+
+          <div class="turn-body">
+            {% if turn.user_text %}
+              <section class="message user" data-role="user">
+                <div class="message-label">User</div>
+                {% if turn.user_view.was_trimmed %}
+                  <div class="message-meta">setup/context scaffold hidden · {{ turn.user_view.hidden_segments|length }} block(s)</div>
+                {% endif %}
+                {% if turn.user_view.display_text %}
+                  <div class="bubble">{{ turn.user_view.display_text }}</div>
+                {% else %}
+                  <div class="soft small">Only setup/context scaffold was captured in this user message.</div>
+                {% endif %}
+                {% if turn.user_view.hidden_segments %}
+                  <details class="message-context">
+                    <summary class="small">Hidden setup/context</summary>
+                    <div class="stack" style="margin-top:10px;">
+                      {% for segment in turn.user_view.hidden_segments %}
+                        <div class="soft small"><strong>{{ segment.label }}</strong>: {{ segment.preview }}</div>
+                      {% endfor %}
+                    </div>
+                  </details>
+                {% endif %}
+              </section>
+            {% endif %}
+
+            {% if turn.assistant_text %}
+              <section class="message assistant" data-role="assistant">
+                <div class="message-label">Assistant</div>
+                {% if turn.assistant_view.was_trimmed %}
+                  <div class="message-meta">setup/context scaffold hidden · {{ turn.assistant_view.hidden_segments|length }} block(s)</div>
+                {% endif %}
+                {% if turn.assistant_view.display_text %}
+                  <div class="bubble">{{ turn.assistant_view.display_text }}</div>
+                {% else %}
+                  <div class="soft small">Only setup/context scaffold was captured in this assistant message.</div>
+                {% endif %}
+                {% if turn.assistant_view.hidden_segments %}
+                  <details class="message-context">
+                    <summary class="small">Hidden setup/context</summary>
+                    <div class="stack" style="margin-top:10px;">
+                      {% for segment in turn.assistant_view.hidden_segments %}
+                        <div class="soft small"><strong>{{ segment.label }}</strong>: {{ segment.preview }}</div>
+                      {% endfor %}
+                    </div>
+                  </details>
+                {% endif %}
+              </section>
+            {% endif %}
+
+            {% if turn.calls %}
+              <details class="tool-drawer" data-role="tools">
+                <summary>
+                  <span><strong>Tool Activity</strong></span>
+                  <span class="muted small">{{ turn.calls|length }} call(s)</span>
+                </summary>
+                <div class="tool-list">
+                  {% for call in turn.calls %}
+                    <div class="tool-item">
+                      <div class="tool-item-head">
+                        <span class="tool-item-title">{{ call.tool_name }}</span>
+                        <span class="pill">{{ call.tool_kind }}</span>
+                        {% if call.success == 1 %}
+                          <span class="pill strong">success</span>
+                        {% elif call.success == 0 %}
+                          <span class="pill needs-review">failed</span>
+                        {% endif %}
+                      </div>
+                      <div class="tool-item-meta">
+                        {{ call.mcp_server or call.skill_name or call.subagent_type or "builtin" }}
+                        {% if call.input_size %} · in {{ call.input_size }}{% endif %}
+                        {% if call.output_size %} · out {{ call.output_size }}{% endif %}
+                      </div>
+                      {% if call.error_text %}
+                        <div class="soft small" style="margin-top:8px;">{{ call.error_text }}</div>
+                      {% endif %}
+                      <details class="tool-json">
+                        <summary class="small">Raw tool payload</summary>
+                        <pre>{{ call.raw_json }}</pre>
+                      </details>
+                    </div>
+                  {% endfor %}
+                </div>
+              </details>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    <div class="details-stack">
+      <details class="card raw-block">
+        <summary>Session Payload</summary>
+        <pre>{{ session.raw_payload }}</pre>
+      </details>
+      <details class="card raw-block">
+        <summary>Session Extra</summary>
+        <pre>{{ session.extra }}</pre>
+      </details>
+    </div>
+  </main>
 </div>
+
+<script>
+  (function () {
+    var blocks = Array.prototype.slice.call(document.querySelectorAll('.turn-block'));
+    var searchInput = document.getElementById('turn-search');
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('.filter-btn'));
+    var mode = 'all';
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      buttons.forEach(function (button) {
+        button.classList.toggle('active', button.getAttribute('data-mode') === nextMode);
+      });
+      render();
+    }
+
+    function render() {
+      var query = (searchInput.value || '').trim().toLowerCase();
+      blocks.forEach(function (block) {
+        var text = block.getAttribute('data-search') || '';
+        var hasUser = block.getAttribute('data-has-user') === '1';
+        var hasAssistant = block.getAttribute('data-has-assistant') === '1';
+        var hasTools = block.getAttribute('data-has-tools') === '1';
+        var visible = !query || text.indexOf(query) !== -1;
+
+        if (mode === 'user' && !hasUser) visible = false;
+        if (mode === 'assistant' && !hasAssistant) visible = false;
+
+        block.style.display = visible ? '' : 'none';
+
+        Array.prototype.slice.call(block.querySelectorAll('[data-role="user"]')).forEach(function (node) {
+          node.style.display = mode === 'assistant' ? 'none' : '';
+        });
+        Array.prototype.slice.call(block.querySelectorAll('[data-role="assistant"]')).forEach(function (node) {
+          node.style.display = mode === 'user' ? 'none' : '';
+        });
+        Array.prototype.slice.call(block.querySelectorAll('[data-role="tools"]')).forEach(function (node) {
+          node.style.display = mode === 'no-tools' || !hasTools ? 'none' : '';
+        });
+      });
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        setMode(button.getAttribute('data-mode'));
+      });
+    });
+    searchInput.addEventListener('input', render);
+    render();
+  })();
+</script>
 {% endblock %}

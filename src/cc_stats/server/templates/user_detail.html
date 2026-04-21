@@ -10,6 +10,10 @@
   <div class="card"><div class="muted">Avg Duration</div><div class="metric">{{ patterns.overview.avg_duration_sec|round|int }}s</div></div>
   <div class="card"><div class="muted">Avg Turns</div><div class="metric">{{ patterns.overview.avg_turn_count|round(1) }}</div></div>
   <div class="card"><div class="muted">Total Tokens</div><div class="metric">{{ patterns.overview.total_tokens|int }}</div></div>
+  <div class="card"><div class="muted">Avg Quality</div><div class="metric">{{ patterns.overview.avg_quality_score|round(1) }}</div></div>
+  <div class="card"><div class="muted">Resolved Rate</div><div class="metric">{{ (patterns.overview.resolved_rate * 100)|round(1) }}%</div></div>
+  <div class="card"><div class="muted">Verification Rate</div><div class="metric">{{ (patterns.overview.verification_rate * 100)|round(1) }}%</div></div>
+  <div class="card"><div class="muted">Needs Review</div><div class="metric">{{ patterns.overview.needs_review_sessions }}</div></div>
 </div>
 
 <div class="grid two">
@@ -25,12 +29,17 @@
     </table>
   </div>
   <div class="card">
-    <h2>Top Repositories</h2>
+    <h2>Work Patterns</h2>
     <table>
-      <thead><tr><th>Repo</th><th>Sessions</th></tr></thead>
+      <thead><tr><th>Pattern</th><th>Sessions</th><th>Avg Quality</th><th>Resolved</th></tr></thead>
       <tbody>
-      {% for item in patterns.repos %}
-        <tr><td>{{ item.label }}</td><td>{{ item.sessions }}</td></tr>
+      {% for item in patterns.patterns %}
+        <tr>
+          <td>{{ item.label }}</td>
+          <td>{{ item.sessions }}</td>
+          <td>{{ item.avg_quality_score|round(1) }}</td>
+          <td>{{ (item.resolved_rate * 100)|round(1) }}%</td>
+        </tr>
       {% endfor %}
       </tbody>
     </table>
@@ -50,16 +59,61 @@
     </table>
   </div>
   <div class="card">
+    <h2>Typical Problems</h2>
+    <table>
+      <thead><tr><th>Topic</th><th>Sessions</th><th>Strong</th><th>Needs Review</th></tr></thead>
+      <tbody>
+      {% for item in patterns.topics %}
+        <tr><td>{{ item.label }}</td><td>{{ item.sessions }}</td><td>{{ item.strong_sessions }}</td><td>{{ item.needs_review_sessions }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid two" style="margin-top:18px;">
+  <div class="card">
+    <h2>Strong Cases</h2>
+    {% for item in patterns.strong_cases %}
+      <div style="padding:12px 0; border-bottom:1px solid #ded6c6;">
+        <div class="eyebrow">{{ item.work_pattern_label }} · score {{ item.quality_score }}</div>
+        <div><a href="/sessions/{{ item.session_id }}">{{ item.case_title }}</a></div>
+        <div class="muted small">{{ item.tool_path_text }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h2>Needs Review</h2>
+    {% for item in patterns.needs_review_cases %}
+      <div style="padding:12px 0; border-bottom:1px solid #ded6c6;">
+        <div class="eyebrow">{{ item.outcome_status }} · score {{ item.quality_score }}</div>
+        <div><a href="/sessions/{{ item.session_id }}">{{ item.case_title }}</a></div>
+        <div class="muted small">{{ item.tool_path_text }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="grid two" style="margin-top:18px;">
+  <div class="card">
+    <h2>Common Gaps</h2>
+    <div class="stack">
+      {% for item in patterns.improvement_flags %}
+        <span class="pill">{{ item.label }} · {{ item.sessions }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card">
     <h2>Recent Sessions</h2>
     <table>
-      <thead><tr><th>Time</th><th>Repo</th><th>Category</th><th>Summary</th></tr></thead>
+      <thead><tr><th>Time</th><th>Quality</th><th>Pattern</th><th>Case</th></tr></thead>
       <tbody>
       {% for item in patterns.recent_sessions %}
         <tr>
           <td><a href="/sessions/{{ item.session_id }}">{{ item.started_at or item.ended_at or item.session_id }}</a></td>
-          <td>{{ item.repo or "" }}</td>
-          <td>{{ item.category }}</td>
-          <td>{{ item.summary }}</td>
+          <td>{{ item.quality_score }}</td>
+          <td>{{ item.work_pattern_label }}</td>
+          <td>{{ item.case_title }}</td>
         </tr>
       {% endfor %}
       </tbody>

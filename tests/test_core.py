@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from cc_stats.collectors.claude_code import parse_claude_transcript
 from cc_stats.collectors.costrict import parse_costrict_task
+from cc_stats.portable import build_claude_export_bundle, import_claude_export_bundle
 from cc_stats.server.app import TEMPLATES
 from cc_stats.server.db import capability_stats, connect_db, daily_stats, get_session_detail, list_sessions, monthly_stats, upsert_session, weekly_stats
 from starlette.requests import Request
@@ -304,8 +307,33 @@ class DbTest(unittest.TestCase):
                                         "id": "m1",
                                         "model": "claude-sonnet-4-6",
                                         "role": "assistant",
-                                        "content": [{"type": "text", "text": "I drafted the deployment guide."}],
+                                        "content": [{"type": "tool_use", "id": "t1", "name": "Write", "input": {"file_path": "DEPLOY.md"}}],
                                         "usage": {"input_tokens": 4, "output_tokens": 18},
+                                    },
+                                }
+                            ),
+                            json.dumps(
+                                {
+                                    "type": "user",
+                                    "timestamp": "2026-04-17T01:00:03+00:00",
+                                    "uuid": "u2",
+                                    "message": {
+                                        "role": "user",
+                                        "content": [{"type": "tool_result", "tool_use_id": "t1", "content": "ok", "is_error": False}],
+                                    },
+                                }
+                            ),
+                            json.dumps(
+                                {
+                                    "type": "assistant",
+                                    "timestamp": "2026-04-17T01:00:04+00:00",
+                                    "uuid": "a2",
+                                    "message": {
+                                        "id": "m2",
+                                        "model": "claude-sonnet-4-6",
+                                        "role": "assistant",
+                                        "content": [{"type": "text", "text": "I drafted the deployment guide."}],
+                                        "usage": {"input_tokens": 3, "output_tokens": 12},
                                     },
                                 }
                             ),
@@ -321,6 +349,7 @@ class DbTest(unittest.TestCase):
             detail = get_session_detail(conn, session.session_id)
             self.assertIsNotNone(detail)
             self.assertEqual(detail["turn_count"], 1)
+            self.assertIn('"type": "tool_use"', detail["tool_calls"][0]["raw_json_pretty"])
             self.assertEqual(daily_stats(conn, limit=10)[0]["day"], "2026-04-17")
             self.assertTrue(weekly_stats(conn, limit=10)[0]["week"].startswith("2026-W"))
             self.assertEqual(monthly_stats(conn, limit=10)[0]["month"], "2026-04")
@@ -541,6 +570,78 @@ class HtmlRoutesTest(unittest.TestCase):
             )
             self.assertEqual(response.status_code, 200)
             self.assertIn("claude-code", response.body.decode("utf-8"))
+
+
+class PortableClaudeSessionTest(unittest.TestCase):
+    def test_export_and_import_claude_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            transcript_dir = root / "claude-projects" / "old-slug"
+            transcript_dir.mkdir(parents=True)
+            transcript = transcript_dir / "abc.jsonl"
+            subagent = transcript_dir / "subagents" / "agent-1.jsonl"
+            subagent.parent.mkdir(parents=True)
+
+            main_rows = [
+                {
+                    "type": "user",
+                    "timestamp": "2026-04-20T01:00:00+00:00",
+                    "sessionId": "abc",
+                    "cwd": "/tmp/original-project",
+                    "uuid": "u1",
+                    "message": {"role": "user", "content": "resume this work"},
+                },
+                {
+                    "type": "assistant",
+                    "timestamp": "2026-04-20T01:00:05+00:00",
+                    "uuid": "a1",
+                    "message": {
+                        "id": "m1",
+                        "model": "claude-sonnet-4-6",
+                        "role": "assistant",
+                        "content": [{"type": "text", "text": "I resumed the work."}],
+                        "usage": {"input_tokens": 5, "output_tokens": 8},
+                    },
+                },
+            ]
+            transcript.write_text("\n".join(json.dumps(row) for row in main_rows) + "\n", encoding="utf-8")
+            subagent.write_text(
+                json.dumps(
+                    {
+                        "type": "user",
+                        "sessionId": "abc",
+                        "cwd": "/tmp/original-project",
+                        "uuid": "sub-1",
+                        "message": {"role": "user", "content": "sidechain"},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            conn = connect_db(str(root / "db.sqlite3"))
+            upsert_session(conn, parse_claude_transcript(transcript))
+            detail = get_session_detail(conn, "claude-code:abc")
+            conn.close()
+
+            bundle_path = root / "abc.claude-session.zip"
+            bundle_path.write_bytes(build_claude_export_bundle(detail))
+
+            target_project = root / "checkout"
+            target_project.mkdir()
+            fake_home = root / "fake-home"
+            with mock.patch.dict(os.environ, {"HOME": str(fake_home)}, clear=False):
+                result = import_claude_export_bundle(bundle_path, project_dir=target_project)
+
+            main_target = Path(result["main_transcript_path"])
+            self.assertTrue(main_target.exists())
+            imported_main = [json.loads(line) for line in main_target.read_text(encoding="utf-8").splitlines() if line.strip()]
+            self.assertEqual(imported_main[0]["cwd"], str(target_project))
+
+            subagent_target = main_target.parent / "subagents" / "agent-1.jsonl"
+            self.assertTrue(subagent_target.exists())
+            imported_subagent = [json.loads(line) for line in subagent_target.read_text(encoding="utf-8").splitlines() if line.strip()]
+            self.assertEqual(imported_subagent[0]["cwd"], str(target_project))
 
 
 if __name__ == "__main__":

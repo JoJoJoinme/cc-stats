@@ -4,6 +4,37 @@
   .session-hero {
     margin-bottom: 18px;
   }
+  .hero-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: start;
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .action-link {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+    font-weight: 700;
+  }
+  .action-link:hover {
+    color: #fff;
+    text-decoration: none;
+  }
+  .action-link.secondary {
+    background: #fff;
+    color: var(--accent);
+    border-color: var(--line);
+  }
   .session-shell {
     display: grid;
     grid-template-columns: 320px minmax(0, 1fr);
@@ -222,9 +253,20 @@
 </style>
 
 <div class="card session-hero">
-  <div class="eyebrow">Session Viewer</div>
-  <h1>{{ session.case_title }}</h1>
-  <div class="muted" style="margin-top:6px;">{{ session.session_id }}</div>
+  <div class="hero-top">
+    <div>
+      <div class="eyebrow">Session Viewer</div>
+      <h1>{{ session.case_title }}</h1>
+      <div class="muted" style="margin-top:6px;">{{ session.session_id }}</div>
+    </div>
+    {% if session.can_export_claude_bundle %}
+      <div class="hero-actions">
+        <a class="action-link" href="/api/v1/sessions/{{ session.session_id }}/export/claude-bundle">
+          Download Claude Session Pack
+        </a>
+      </div>
+    {% endif %}
+  </div>
   <div class="stack" style="margin-top:12px;">
     <span class="pill">{{ session.source }}</span>
     <span class="pill">{{ session.user_id }}</span>
@@ -278,6 +320,13 @@
           {% endfor %}
         </div>
       </div>
+      {% if session.can_export_claude_bundle %}
+        <div class="soft small" style="margin-top:12px;">
+          <div class="eyebrow">Portable Resume</div>
+          <div>Import this bundle on another machine from the target repo root:</div>
+          <pre style="margin-top:10px;">cc-stats client import-claude-session ~/Downloads/{{ session.claude_bundle_name }} --project-dir /path/to/repo</pre>
+        </div>
+      {% endif %}
     </div>
 
     <div class="card sidebar-section">
@@ -427,7 +476,7 @@
                       {% endif %}
                       <details class="tool-json">
                         <summary class="small">Raw tool payload</summary>
-                        <pre>{{ call.raw_json }}</pre>
+                        <pre>{{ call.raw_json_pretty }}</pre>
                       </details>
                     </div>
                   {% endfor %}
@@ -442,11 +491,11 @@
     <div class="details-stack">
       <details class="card raw-block">
         <summary>Session Payload</summary>
-        <pre>{{ session.raw_payload }}</pre>
+        <pre>{{ session.raw_payload_pretty }}</pre>
       </details>
       <details class="card raw-block">
         <summary>Session Extra</summary>
-        <pre>{{ session.extra }}</pre>
+        <pre>{{ session.extra_pretty }}</pre>
       </details>
     </div>
   </main>

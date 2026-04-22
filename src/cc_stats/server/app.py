@@ -3,10 +3,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from ..models import SessionRecord, ToolCallRecord, TurnRecord
+from ..portable import build_claude_export_bundle
 from .db import (
     capability_stats,
     connect_db,
@@ -227,6 +228,22 @@ def create_app(db_path: Optional[str] = None, auth_token: Optional[str] = None) 
         if not detail:
             raise HTTPException(status_code=404, detail="Session not found")
         return detail
+
+    @app.get("/api/v1/sessions/{session_id}/export/claude-bundle")
+    def api_export_claude_bundle(session_id: str, conn=Depends(get_conn)) -> Response:
+        detail = get_session_detail(conn, session_id)
+        if not detail:
+            raise HTTPException(status_code=404, detail="Session not found")
+        try:
+            bundle = build_claude_export_bundle(detail)
+        except (ValueError, FileNotFoundError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        file_name = detail.get("claude_bundle_name") or "claude-session.zip"
+        return Response(
+            content=bundle,
+            media_type="application/zip",
+            headers={"Content-Disposition": 'attachment; filename="{0}"'.format(file_name)},
+        )
 
     @app.get("/api/v1/users/{user_id}/patterns")
     def api_user_patterns(user_id: str, conn=Depends(get_conn)) -> Dict[str, Any]:

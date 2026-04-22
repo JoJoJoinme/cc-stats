@@ -187,6 +187,18 @@ def _json_loads(value: Any, default: Any) -> Any:
         return default
 
 
+def _pretty_json(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except (TypeError, ValueError):
+            return value
+        return json.dumps(parsed, ensure_ascii=False, indent=2, sort_keys=True)
+    return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True)
+
+
 _TRANSCRIPT_TRIM_RULES = [
     (
         "environment details",
@@ -655,9 +667,17 @@ def get_session_detail(conn: sqlite3.Connection, session_id: str) -> Optional[Di
     detail = _attach_insights(detail)
     detail["models"] = _json_loads(detail.get("models_json"), [])
     detail["raw_payload"] = _json_loads(detail.get("raw_payload_json"), {})
+    detail["raw_payload_pretty"] = _pretty_json(detail["raw_payload"])
+    detail["extra_pretty"] = _pretty_json(detail.get("extra"))
+    raw_path = compact_ws(detail.get("raw_path"))
+    detail["can_export_claude_bundle"] = bool(
+        detail.get("source") == "claude-code" and raw_path and Path(raw_path).exists()
+    )
+    detail["claude_bundle_name"] = "{0}.claude-session.zip".format(detail.get("native_session_id") or "session")
     calls_by_turn = defaultdict(list)
     for call in detail["tool_calls"]:
         call["raw_json"] = _json_loads(call.get("raw_json"), {})
+        call["raw_json_pretty"] = _pretty_json(call["raw_json"])
         calls_by_turn[call["turn_idx"]].append(call)
     turn_items = []
     for turn in detail["turns"]:

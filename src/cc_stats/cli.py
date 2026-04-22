@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from .collectors import backfill_claude, build_session_from_claude_hook, scan_costrict_once
 from .config import ClientConfig, load_client_config, save_client_config
 from .paths import claude_settings_path, project_claude_settings_path
+from .portable import build_claude_export_bundle, import_claude_export_bundle
 from .transport import post_json, resolve_server_and_token, send_session
 from .utils import ensure_dir, load_stdin_json, read_json, write_json
 
@@ -427,6 +428,44 @@ def cmd_client_backfill_claude(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_client_export_claude_session(args: argparse.Namespace) -> int:
+    from .server.db import get_session_detail
+
+    conn = _connect_db(args.db_path)
+    try:
+        detail = get_session_detail(conn, args.session_id)
+        if not detail and not str(args.session_id).startswith("claude-code:"):
+            detail = get_session_detail(conn, "claude-code:{0}".format(args.session_id))
+    finally:
+        conn.close()
+    if not detail:
+        raise RuntimeError("Session not found: {0}".format(args.session_id))
+
+    bundle = build_claude_export_bundle(detail)
+    output = Path(args.output or detail.get("claude_bundle_name") or "claude-session.zip").expanduser().resolve()
+    ensure_dir(output.parent)
+    output.write_bytes(bundle)
+    _print(
+        {
+            "ok": True,
+            "session_id": detail.get("session_id"),
+            "output": str(output),
+            "source": detail.get("source"),
+        }
+    )
+    return 0
+
+
+def cmd_client_import_claude_session(args: argparse.Namespace) -> int:
+    result = import_claude_export_bundle(
+        Path(args.bundle),
+        project_dir=Path(args.project_dir).resolve() if args.project_dir else None,
+        force=bool(args.force),
+    )
+    _print(result)
+    return 0
+
+
 def cmd_client_scan_costrict(args: argparse.Namespace) -> int:
     sessions = scan_costrict_once(changed_only=args.changed_only)
     result = _send_sessions(sessions, args.server_url, args.ingest_token)
@@ -577,6 +616,18 @@ def build_parser() -> argparse.ArgumentParser:
     backfill.add_argument("--ingest-token")
     backfill.add_argument("--limit", type=int)
     backfill.set_defaults(func=cmd_client_backfill_claude)
+
+    export_claude = client_subparsers.add_parser("export-claude-session")
+    export_claude.add_argument("session_id")
+    export_claude.add_argument("--db-path")
+    export_claude.add_argument("--output")
+    export_claude.set_defaults(func=cmd_client_export_claude_session)
+
+    import_claude = client_subparsers.add_parser("import-claude-session")
+    import_claude.add_argument("bundle")
+    import_claude.add_argument("--project-dir", default=".")
+    import_claude.add_argument("--force", action="store_true")
+    import_claude.set_defaults(func=cmd_client_import_claude_session)
 
     scan_costrict = client_subparsers.add_parser("scan-costrict")
     scan_costrict.add_argument("--server-url")

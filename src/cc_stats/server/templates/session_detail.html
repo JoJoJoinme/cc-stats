@@ -2,38 +2,38 @@
 {% block content %}
 <style>
   :root {
-    --viewer-bg: #171922;
-    --viewer-panel: #1f2230;
-    --viewer-panel-soft: #252938;
-    --viewer-panel-muted: #2c3142;
-    --viewer-border: #353b51;
-    --viewer-border-strong: #4f88ff;
-    --viewer-text: #e6e8ef;
-    --viewer-muted: #9aa3b8;
-    --viewer-dim: #727b92;
-    --viewer-accent: #63d3c7;
-    --viewer-accent-soft: rgba(99, 211, 199, 0.12);
-    --viewer-user: #3a3340;
-    --viewer-user-border: #5b5064;
-    --viewer-code: #121520;
-    --viewer-success: #8fd18a;
-    --viewer-warn: #f3c96b;
-    --viewer-danger: #ef8a8a;
+    --viewer-bg: #f3efe6;
+    --viewer-panel: rgba(255, 253, 248, 0.94);
+    --viewer-panel-soft: #f7f1e5;
+    --viewer-panel-muted: #efe6d7;
+    --viewer-border: #ded6c6;
+    --viewer-border-strong: #8da59b;
+    --viewer-text: #1f2937;
+    --viewer-muted: #6b7280;
+    --viewer-dim: #8a8376;
+    --viewer-accent: #045d5d;
+    --viewer-accent-soft: rgba(4, 93, 93, 0.08);
+    --viewer-user: #fbf8f2;
+    --viewer-user-border: #d8cfbe;
+    --viewer-code: #f8f4ec;
+    --viewer-success: #2f855a;
+    --viewer-warn: #b7791f;
+    --viewer-danger: #b85c38;
   }
   body {
-    background: radial-gradient(circle at top, #24283a 0%, #171922 42%, #12141b 100%);
+    background: linear-gradient(180deg, #f7f3ea 0%, #efe7d8 100%);
     color: var(--viewer-text);
   }
   .wrap {
     max-width: 1600px;
   }
   .nav {
-    background: rgba(25, 27, 36, 0.92);
+    background: rgba(255, 255, 255, 0.72);
     border-color: var(--viewer-border);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 6px 28px rgba(38, 34, 25, 0.05);
   }
   .brand {
-    color: var(--viewer-accent);
+    color: #b85c38;
   }
   .nav a {
     color: var(--viewer-muted);
@@ -54,10 +54,10 @@
   .viewer-card,
   .turn-block,
   .raw-block {
-    background: rgba(31, 34, 48, 0.92);
+    background: var(--viewer-panel);
     border: 1px solid var(--viewer-border);
     border-radius: 18px;
-    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 10px 32px rgba(61, 52, 37, 0.08);
   }
   .sidebar-card {
     padding: 14px;
@@ -78,10 +78,10 @@
     width: 100%;
     border-radius: 12px;
     border: 1px solid var(--viewer-border);
-    background: #151823;
+    background: #fffdf8;
     color: var(--viewer-text);
     padding: 11px 12px;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    box-shadow: inset 0 0 0 1px rgba(31, 41, 55, 0.02);
   }
   .sidebar-search input::placeholder,
   .toolbar-search input::placeholder {
@@ -96,14 +96,14 @@
     width: auto;
     border-radius: 999px;
     border: 1px solid var(--viewer-border);
-    background: #171a25;
+    background: #fffdf8;
     color: var(--viewer-muted);
     padding: 6px 10px;
     font-size: 0.8rem;
   }
   .filter-btn.active {
-    background: rgba(79, 136, 255, 0.18);
-    border-color: rgba(99, 211, 199, 0.55);
+    background: var(--viewer-accent-soft);
+    border-color: rgba(4, 93, 93, 0.35);
     color: var(--viewer-text);
   }
   .turn-nav {
@@ -118,14 +118,14 @@
     padding: 10px 11px;
     border-radius: 14px;
     border: 1px solid var(--viewer-border);
-    background: rgba(18, 21, 32, 0.88);
+    background: var(--viewer-panel-soft);
     color: var(--viewer-muted);
     text-decoration: none;
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     line-height: 1.45;
   }
   .turn-link:hover {
-    background: rgba(33, 37, 52, 0.96);
+    background: var(--viewer-panel-muted);
     border-color: var(--viewer-border-strong);
     text-decoration: none;
   }
@@ -151,7 +151,7 @@
     color: var(--viewer-dim);
   }
   .sidebar-meta details {
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(31, 41, 55, 0.08);
     padding-top: 12px;
     margin-top: 12px;
   }
@@ -204,7 +204,7 @@
     border-radius: 12px;
     padding: 10px 14px;
     border: 1px solid var(--viewer-border);
-    background: linear-gradient(180deg, rgba(79, 136, 255, 0.18), rgba(79, 136, 255, 0.1));
+    background: linear-gradient(180deg, rgba(4, 93, 93, 0.12), rgba(4, 93, 93, 0.06));
     color: var(--viewer-text);
     font-weight: 700;
   }
@@ -218,32 +218,32 @@
     gap: 4px;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(31, 41, 55, 0.08);
+    background: rgba(31, 41, 55, 0.03);
     color: var(--viewer-muted);
     font-size: 0.78rem;
     margin-right: 6px;
     margin-bottom: 6px;
   }
   .pill.strong {
-    background: rgba(143, 209, 138, 0.12);
+    background: rgba(47, 133, 90, 0.1);
     color: var(--viewer-success);
-    border-color: rgba(143, 209, 138, 0.18);
+    border-color: rgba(47, 133, 90, 0.16);
   }
   .pill.mixed {
-    background: rgba(243, 201, 107, 0.1);
+    background: rgba(183, 121, 31, 0.1);
     color: var(--viewer-warn);
-    border-color: rgba(243, 201, 107, 0.16);
+    border-color: rgba(183, 121, 31, 0.16);
   }
   .pill.needs-review {
-    background: rgba(239, 138, 138, 0.12);
+    background: rgba(184, 92, 56, 0.12);
     color: var(--viewer-danger);
-    border-color: rgba(239, 138, 138, 0.2);
+    border-color: rgba(184, 92, 56, 0.18);
   }
   .pill.outcome {
-    background: rgba(99, 211, 199, 0.12);
+    background: var(--viewer-accent-soft);
     color: var(--viewer-accent);
-    border-color: rgba(99, 211, 199, 0.2);
+    border-color: rgba(4, 93, 93, 0.16);
   }
   .viewer-summary {
     padding: 0;
@@ -269,7 +269,7 @@
   .summary-metric {
     border-radius: 14px;
     border: 1px solid var(--viewer-border);
-    background: rgba(18, 21, 32, 0.82);
+    background: var(--viewer-panel-soft);
     padding: 12px;
   }
   .summary-metric-label {
@@ -292,7 +292,7 @@
   .summary-block {
     border-radius: 14px;
     border: 1px solid var(--viewer-border);
-    background: rgba(18, 21, 32, 0.82);
+    background: var(--viewer-panel-soft);
     padding: 12px;
   }
   .summary-block .small {
@@ -351,7 +351,7 @@
   .bubble {
     border-radius: 16px;
     border: 1px solid var(--viewer-border);
-    background: rgba(37, 41, 56, 0.92);
+    background: rgba(255, 253, 248, 0.94);
     padding: 14px 16px;
     line-height: 1.6;
     color: var(--viewer-text);
@@ -371,7 +371,7 @@
   .bubble.rendered h4 {
     margin: 0 0 0.7rem 0;
     line-height: 1.28;
-    color: #f0f3fb;
+    color: var(--viewer-text);
   }
   .bubble.rendered h2 {
     font-size: 1.02rem;
@@ -392,23 +392,23 @@
     margin-top: 0.3rem;
   }
   .bubble.rendered a {
-    color: #9ec3ff;
+    color: var(--viewer-accent);
   }
   .bubble.rendered code {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     font-size: 0.92em;
     padding: 0.12em 0.35em;
     border-radius: 6px;
-    color: #d8f7f2;
-    background: rgba(99, 211, 199, 0.08);
+    color: var(--viewer-accent);
+    background: rgba(4, 93, 93, 0.08);
   }
   .bubble.rendered pre {
     overflow: auto;
     padding: 14px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(31, 41, 55, 0.08);
     background: var(--viewer-code);
-    color: #f7f7fb;
+    color: var(--viewer-text);
   }
   .bubble.rendered pre code {
     padding: 0;
@@ -418,10 +418,10 @@
   }
   .bubble.rendered blockquote {
     padding: 0.65rem 0.9rem;
-    border-left: 3px solid rgba(99, 211, 199, 0.45);
-    background: rgba(99, 211, 199, 0.06);
+    border-left: 3px solid rgba(4, 93, 93, 0.28);
+    background: rgba(4, 93, 93, 0.05);
     border-radius: 0 10px 10px 0;
-    color: #cdd6e8;
+    color: var(--viewer-muted);
   }
   .bubble.rendered table {
     width: 100%;
@@ -438,7 +438,7 @@
     vertical-align: top;
   }
   .bubble.rendered th {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(31, 41, 55, 0.03);
   }
   .message-context {
     margin-top: 8px;
@@ -450,7 +450,7 @@
     color: var(--viewer-text);
   }
   .soft {
-    background: rgba(37, 41, 56, 0.9);
+    background: rgba(247, 241, 229, 0.92);
     border: 1px solid var(--viewer-border);
     border-radius: 12px;
     padding: 10px 12px;
@@ -466,7 +466,7 @@
   .tool-drawer {
     border: 1px solid var(--viewer-border);
     border-radius: 16px;
-    background: rgba(20, 23, 33, 0.88);
+    background: rgba(247, 241, 229, 0.9);
     overflow: hidden;
   }
   .tool-drawer summary {
@@ -488,7 +488,7 @@
   .tool-item {
     border-radius: 14px;
     border: 1px solid var(--viewer-border);
-    background: rgba(37, 41, 56, 0.82);
+    background: rgba(255, 253, 248, 0.94);
     padding: 12px;
   }
   .tool-item-head {
@@ -510,9 +510,9 @@
     margin-top: 8px;
   }
   pre {
-    background: #121520;
+    background: var(--viewer-code);
     border: 1px solid var(--viewer-border);
-    color: #dce2f2;
+    color: var(--viewer-text);
     border-radius: 14px;
     padding: 14px;
     overflow: auto;
@@ -580,7 +580,7 @@
       <div class="sidebar-title">Conversation</div>
       <div class="turn-nav">
         {% for item in session.turn_items %}
-          <a class="turn-link" href="#{{ item.anchor }}">
+          <a class="turn-link" href="#{{ item.anchor }}" data-anchor="{{ item.anchor }}">
             <div class="turn-link-title">
               <span class="turn-link-role">{{ item.preview_role }}</span>
               <span class="turn-link-index">#{{ item.turn_idx }}</span>
@@ -814,9 +814,15 @@
 <script>
   (function () {
     var blocks = Array.prototype.slice.call(document.querySelectorAll('.turn-block'));
+    var links = Array.prototype.slice.call(document.querySelectorAll('.turn-link'));
     var searchInput = document.getElementById('turn-search');
     var buttons = Array.prototype.slice.call(document.querySelectorAll('.filter-btn'));
     var mode = 'all';
+    var linkByAnchor = {};
+
+    links.forEach(function (link) {
+      linkByAnchor[link.getAttribute('data-anchor')] = link;
+    });
 
     function setMode(nextMode) {
       mode = nextMode;
@@ -840,6 +846,9 @@
         if (mode === 'no-tools' && hasTools) visible = false;
 
         block.style.display = visible ? '' : 'none';
+        if (linkByAnchor[block.id]) {
+          linkByAnchor[block.id].style.display = visible ? '' : 'none';
+        }
 
         Array.prototype.slice.call(block.querySelectorAll('[data-role="user"]')).forEach(function (node) {
           node.style.display = mode === 'assistant' ? 'none' : '';

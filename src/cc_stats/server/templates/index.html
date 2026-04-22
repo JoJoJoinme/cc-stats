@@ -248,7 +248,7 @@
   <div class="card">
     <h2>Strong Cases</h2>
     {% for item in insights.strong_cases %}
-      <div style="padding:12px 0; border-bottom:1px solid #ded6c6;">
+      <div style="padding:12px 0; border-bottom:1px solid var(--line);">
         <div class="eyebrow">{{ item.user_id }} · {{ item.work_pattern_label }} · score {{ item.quality_score }}</div>
         <div><a href="/sessions/{{ item.session_id }}">{{ item.case_title }}</a></div>
         <div class="muted small">{{ item.tool_path_text }}</div>
@@ -258,7 +258,7 @@
   <div class="card">
     <h2>Needs Review Cases</h2>
     {% for item in insights.needs_review_cases %}
-      <div style="padding:12px 0; border-bottom:1px solid #ded6c6;">
+      <div style="padding:12px 0; border-bottom:1px solid var(--line);">
         <div class="eyebrow">{{ item.user_id }} · {{ item.outcome_status }} · score {{ item.quality_score }}</div>
         <div><a href="/sessions/{{ item.session_id }}">{{ item.case_title }}</a></div>
         <div class="muted small">{{ item.tool_path_text }}</div>

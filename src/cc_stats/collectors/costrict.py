@@ -30,6 +30,7 @@ from .common import (
     extract_text_from_content,
     extract_tool_results,
     extract_tool_uses,
+    normalize_message_text,
     normalize_tool_payload,
     primary_from_counter,
 )
@@ -109,7 +110,7 @@ def _parse_api_messages(session_id: str, messages: List[Dict[str, Any]]) -> Tupl
 
         assistant_text = extract_text_from_content(message.get("content"), include_tool_results=False)
         if assistant_text:
-            current_turn.assistant_text = compact_ws("\n".join(filter(None, [current_turn.assistant_text, assistant_text])))
+            current_turn.assistant_text = normalize_message_text("\n\n".join(filter(None, [current_turn.assistant_text, assistant_text])))
             current_turn.assistant_chars = len(current_turn.assistant_text)
             current_turn.ended_at = timestamp or current_turn.ended_at
             summary_texts.append(assistant_text)
@@ -157,7 +158,7 @@ def _parse_ui_messages(session_id: str, messages: List[Dict[str, Any]]) -> Tuple
         msg_type = message.get("type")
         ask = message.get("ask")
         say = message.get("say")
-        text = compact_ws(message.get("text") or "")
+        text = normalize_message_text(message.get("text") or "")
 
         if msg_type == "say" and say in {"user_feedback", "user_feedback_diff"} and text:
             current_turn = TurnRecord(
@@ -185,12 +186,12 @@ def _parse_ui_messages(session_id: str, messages: List[Dict[str, Any]]) -> Tuple
             turns.append(current_turn)
 
         if msg_type == "say" and say in {"text", "completion_result", "error", "subtask_result", "reasoning"}:
-            current_turn.assistant_text = compact_ws("\n".join(filter(None, [current_turn.assistant_text, text])))
+            current_turn.assistant_text = normalize_message_text("\n\n".join(filter(None, [current_turn.assistant_text, text])))
             current_turn.assistant_chars = len(current_turn.assistant_text)
             current_turn.ended_at = timestamp or current_turn.ended_at
             summary_texts.append(text)
         elif msg_type == "ask" and ask in {"followup", "multiple_choice"}:
-            current_turn.assistant_text = compact_ws("\n".join(filter(None, [current_turn.assistant_text, text])))
+            current_turn.assistant_text = normalize_message_text("\n\n".join(filter(None, [current_turn.assistant_text, text])))
             current_turn.assistant_chars = len(current_turn.assistant_text)
             current_turn.ended_at = timestamp or current_turn.ended_at
             summary_texts.append(text)

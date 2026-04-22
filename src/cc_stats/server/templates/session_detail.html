@@ -149,6 +149,90 @@
     white-space: pre-wrap;
     line-height: 1.55;
   }
+  .bubble.rendered {
+    white-space: normal;
+  }
+  .bubble.rendered > :first-child {
+    margin-top: 0;
+  }
+  .bubble.rendered > :last-child {
+    margin-bottom: 0;
+  }
+  .bubble.rendered h1,
+  .bubble.rendered h2,
+  .bubble.rendered h3,
+  .bubble.rendered h4 {
+    margin: 0 0 0.7rem 0;
+    line-height: 1.25;
+  }
+  .bubble.rendered p,
+  .bubble.rendered ul,
+  .bubble.rendered ol,
+  .bubble.rendered blockquote,
+  .bubble.rendered pre,
+  .bubble.rendered table {
+    margin: 0 0 0.9rem 0;
+  }
+  .bubble.rendered ul,
+  .bubble.rendered ol {
+    padding-left: 1.4rem;
+  }
+  .bubble.rendered li + li {
+    margin-top: 0.3rem;
+  }
+  .bubble.rendered code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.92em;
+    padding: 0.14em 0.38em;
+    border-radius: 6px;
+    background: rgba(12, 87, 87, 0.08);
+  }
+  .bubble.rendered pre {
+    overflow: auto;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(31, 41, 55, 0.12);
+    background: #1f2937;
+    color: #f8fafc;
+  }
+  .bubble.rendered pre code {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .bubble.rendered blockquote {
+    padding: 0.6rem 0.9rem;
+    border-left: 4px solid rgba(4, 93, 93, 0.35);
+    background: rgba(4, 93, 93, 0.06);
+    border-radius: 0 10px 10px 0;
+    color: #41505c;
+  }
+  .bubble.rendered table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.65);
+  }
+  .bubble.rendered th,
+  .bubble.rendered td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  .bubble.rendered th {
+    background: rgba(4, 93, 93, 0.06);
+    color: var(--ink);
+  }
+  .bubble.rendered hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 1rem 0;
+  }
   .message-meta {
     margin-bottom: 8px;
     color: var(--muted);
@@ -407,7 +491,7 @@
                   <div class="message-meta">setup/context scaffold hidden · {{ turn.user_view.hidden_segments|length }} block(s)</div>
                 {% endif %}
                 {% if turn.user_view.display_text %}
-                  <div class="bubble">{{ turn.user_view.display_text }}</div>
+                  <div class="bubble rendered">{{ turn.user_view.html | safe }}</div>
                 {% else %}
                   <div class="soft small">Only setup/context scaffold was captured in this user message.</div>
                 {% endif %}
@@ -431,7 +515,7 @@
                   <div class="message-meta">setup/context scaffold hidden · {{ turn.assistant_view.hidden_segments|length }} block(s)</div>
                 {% endif %}
                 {% if turn.assistant_view.display_text %}
-                  <div class="bubble">{{ turn.assistant_view.display_text }}</div>
+                  <div class="bubble rendered">{{ turn.assistant_view.html | safe }}</div>
                 {% else %}
                   <div class="soft small">Only setup/context scaffold was captured in this assistant message.</div>
                 {% endif %}

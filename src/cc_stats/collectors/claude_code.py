@@ -26,6 +26,7 @@ from .common import (
     extract_text_from_content,
     extract_tool_results,
     extract_tool_uses,
+    normalize_message_text,
     normalize_tool_payload,
     primary_from_counter,
 )
@@ -278,7 +279,7 @@ def parse_claude_transcript(transcript_path: Path, hook_payload: Optional[Dict[s
 
         assistant_text = extract_text_from_content(message.get("content"), include_tool_results=False)
         if assistant_text and not is_local_command_text(assistant_text):
-            current_turn.assistant_text = compact_ws("\n".join(filter(None, [current_turn.assistant_text, assistant_text])))
+            current_turn.assistant_text = normalize_message_text("\n\n".join(filter(None, [current_turn.assistant_text, assistant_text])))
             current_turn.assistant_chars = len(current_turn.assistant_text)
             current_turn.ended_at = timestamp or current_turn.ended_at
             summary_texts.append(assistant_text)

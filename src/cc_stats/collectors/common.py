@@ -13,12 +13,21 @@ def iter_content_blocks(content: Any) -> List[Any]:
     return [content]
 
 
+def normalize_message_text(text: Any) -> str:
+    if not isinstance(text, str):
+        return ""
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = "\n".join(line.rstrip() for line in normalized.split("\n"))
+    return normalized.strip()
+
+
 def extract_text_from_content(content: Any, include_tool_results: bool = False) -> str:
     parts = []
     for block in iter_content_blocks(content):
         if isinstance(block, str):
-            if compact_ws(block):
-                parts.append(compact_ws(block))
+            text = normalize_message_text(block)
+            if compact_ws(text):
+                parts.append(text)
             continue
         if not isinstance(block, dict):
             continue
@@ -29,16 +38,18 @@ def extract_text_from_content(content: Any, include_tool_results: bool = False) 
             continue
         if block_type in {"text", "input_text", "output_text"}:
             text = block.get("text") or block.get("content")
-            if isinstance(text, str) and compact_ws(text):
-                parts.append(compact_ws(text))
+            text = normalize_message_text(text)
+            if compact_ws(text):
+                parts.append(text)
             continue
         if block_type == "tool_result" and include_tool_results:
             nested = extract_text_from_content(block.get("content"), include_tool_results=False)
             if nested:
                 parts.append(nested)
             continue
-        if isinstance(block.get("content"), str) and compact_ws(block["content"]):
-            parts.append(compact_ws(block["content"]))
+        text = normalize_message_text(block.get("content"))
+        if compact_ws(text):
+            parts.append(text)
     return "\n".join(parts).strip()
 
 

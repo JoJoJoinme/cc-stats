@@ -332,7 +332,12 @@ class DbTest(unittest.TestCase):
                                         "id": "m2",
                                         "model": "claude-sonnet-4-6",
                                         "role": "assistant",
-                                        "content": [{"type": "text", "text": "I drafted the deployment guide."}],
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "text": "I drafted the **deployment** guide.\n\n```md\nship it\n```",
+                                            }
+                                        ],
                                         "usage": {"input_tokens": 3, "output_tokens": 12},
                                     },
                                 }
@@ -350,6 +355,8 @@ class DbTest(unittest.TestCase):
             self.assertIsNotNone(detail)
             self.assertEqual(detail["turn_count"], 1)
             self.assertIn('"type": "tool_use"', detail["tool_calls"][0]["raw_json_pretty"])
+            self.assertIn("<strong>deployment</strong>", detail["turns"][0]["assistant_view"]["html"])
+            self.assertIn("<pre><code", detail["turns"][0]["assistant_view"]["html"])
             self.assertEqual(daily_stats(conn, limit=10)[0]["day"], "2026-04-17")
             self.assertTrue(weekly_stats(conn, limit=10)[0]["week"].startswith("2026-W"))
             self.assertEqual(monthly_stats(conn, limit=10)[0]["month"], "2026-04")

@@ -1,4 +1,5 @@
 import csv
+import html
 import io
 import json
 import re
@@ -11,6 +12,11 @@ from ..analysis import ANALYSIS_VERSION, enrich_session
 from ..config import default_db_path
 from ..models import SessionRecord, ToolCallRecord, TurnRecord
 from ..utils import compact_ws, shorten, utc_now
+
+try:
+    import markdown as _markdown_lib
+except Exception:
+    _markdown_lib = None
 
 
 SESSION_COLUMNS = [
@@ -197,6 +203,49 @@ def _pretty_json(value: Any) -> str:
             return value
         return json.dumps(parsed, ensure_ascii=False, indent=2, sort_keys=True)
     return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True)
+
+
+def _render_message_html(text: Optional[str]) -> str:
+    source = _restore_markdown_layout((text or "").strip())
+    if not source:
+        return ""
+    if _markdown_lib is not None:
+        return _markdown_lib.markdown(
+            source,
+            extensions=[
+                "fenced_code",
+                "tables",
+                "sane_lists",
+                "nl2br",
+            ],
+            output_format="html5",
+        )
+
+    escaped = html.escape(source)
+    paragraphs = [part for part in escaped.split("\n\n") if part.strip()]
+    if not paragraphs:
+        return ""
+    return "".join("<p>{0}</p>".format(part.replace("\n", "<br>\n")) for part in paragraphs)
+
+
+def _restore_markdown_layout(text: str) -> str:
+    restored = (text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    if not restored:
+        return ""
+
+    restored = re.sub(
+        r"```([A-Za-z0-9_+-]*)\s+(.*?)\s+```",
+        lambda match: "\n\n```{0}\n{1}\n```\n\n".format(match.group(1), match.group(2).strip()),
+        restored,
+        flags=re.DOTALL,
+    )
+    restored = re.sub(r"\s+(#{1,6}\s+)", r"\n\n\1", restored)
+    restored = re.sub(r"\s+(-\s+\*\*)", r"\n\1", restored)
+    restored = re.sub(r"\s+(\*\s+\*\*)", r"\n\1", restored)
+    restored = re.sub(r"\s+(\d+\.\s+\*\*)", r"\n\1", restored)
+    restored = re.sub(r"\s+(\d+\.\s+)", r"\n\1", restored)
+    restored = re.sub(r"\n{3,}", "\n\n", restored)
+    return restored.strip()
 
 
 _TRANSCRIPT_TRIM_RULES = [
@@ -684,6 +733,8 @@ def get_session_detail(conn: sqlite3.Connection, session_id: str) -> Optional[Di
         turn_calls = calls_by_turn.get(turn["turn_idx"], [])
         user_view = _prepare_transcript_view(turn.get("user_text"))
         assistant_view = _prepare_transcript_view(turn.get("assistant_text"))
+        user_view["html"] = _render_message_html(user_view.get("display_text"))
+        assistant_view["html"] = _render_message_html(assistant_view.get("display_text"))
         turn["calls"] = turn_calls
         turn["anchor"] = "turn-{0}".format(turn["turn_idx"])
         turn["user_view"] = user_view

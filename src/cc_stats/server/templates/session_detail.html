@@ -1,86 +1,91 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-  .session-hero {
-    margin-bottom: 18px;
+  :root {
+    --viewer-bg: #171922;
+    --viewer-panel: #1f2230;
+    --viewer-panel-soft: #252938;
+    --viewer-panel-muted: #2c3142;
+    --viewer-border: #353b51;
+    --viewer-border-strong: #4f88ff;
+    --viewer-text: #e6e8ef;
+    --viewer-muted: #9aa3b8;
+    --viewer-dim: #727b92;
+    --viewer-accent: #63d3c7;
+    --viewer-accent-soft: rgba(99, 211, 199, 0.12);
+    --viewer-user: #3a3340;
+    --viewer-user-border: #5b5064;
+    --viewer-code: #121520;
+    --viewer-success: #8fd18a;
+    --viewer-warn: #f3c96b;
+    --viewer-danger: #ef8a8a;
   }
-  .hero-top {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: start;
+  body {
+    background: radial-gradient(circle at top, #24283a 0%, #171922 42%, #12141b 100%);
+    color: var(--viewer-text);
   }
-  .hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: flex-end;
+  .wrap {
+    max-width: 1600px;
   }
-  .action-link {
-    display: inline-block;
-    padding: 10px 14px;
-    border-radius: 12px;
-    background: var(--accent);
-    color: #fff;
-    border: 1px solid var(--accent);
-    font-weight: 700;
+  .nav {
+    background: rgba(25, 27, 36, 0.92);
+    border-color: var(--viewer-border);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
   }
-  .action-link:hover {
-    color: #fff;
-    text-decoration: none;
+  .brand {
+    color: var(--viewer-accent);
   }
-  .action-link.secondary {
-    background: #fff;
-    color: var(--accent);
-    border-color: var(--line);
+  .nav a {
+    color: var(--viewer-muted);
   }
-  .session-shell {
+  .viewer-page {
     display: grid;
-    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-columns: 330px minmax(0, 1fr);
     gap: 18px;
     align-items: start;
   }
-  .session-sidebar {
+  .viewer-sidebar {
     position: sticky;
     top: 18px;
-  }
-  .sidebar-section + .sidebar-section {
-    margin-top: 18px;
-  }
-  .turn-nav {
     display: grid;
-    gap: 8px;
-    max-height: 440px;
-    overflow: auto;
-    padding-right: 4px;
+    gap: 14px;
   }
-  .turn-link {
-    display: block;
-    padding: 10px 12px;
-    border: 1px solid var(--line);
+  .sidebar-card,
+  .viewer-card,
+  .turn-block,
+  .raw-block {
+    background: rgba(31, 34, 48, 0.92);
+    border: 1px solid var(--viewer-border);
+    border-radius: 18px;
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
+  }
+  .sidebar-card {
+    padding: 14px;
+  }
+  .sidebar-card.summary {
+    padding: 12px 14px;
+  }
+  .sidebar-title,
+  .eyebrow {
+    color: var(--viewer-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    margin-bottom: 8px;
+  }
+  .sidebar-search input,
+  .toolbar-search input {
+    width: 100%;
     border-radius: 12px;
-    background: #fff;
+    border: 1px solid var(--viewer-border);
+    background: #151823;
+    color: var(--viewer-text);
+    padding: 11px 12px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   }
-  .turn-link:hover {
-    background: #f8f4ec;
-    text-decoration: none;
-  }
-  .turn-link-title {
-    font-weight: 700;
-    color: var(--ink);
-  }
-  .turn-link-meta {
-    margin-top: 4px;
-    color: var(--muted);
-    font-size: 0.85rem;
-  }
-  .transcript-toolbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 18px;
+  .sidebar-search input::placeholder,
+  .toolbar-search input::placeholder {
+    color: var(--viewer-dim);
   }
   .filter-row {
     display: flex;
@@ -89,31 +94,217 @@
   }
   .filter-btn {
     width: auto;
-    padding: 8px 12px;
-    background: #fff;
-    color: var(--ink);
+    border-radius: 999px;
+    border: 1px solid var(--viewer-border);
+    background: #171a25;
+    color: var(--viewer-muted);
+    padding: 6px 10px;
+    font-size: 0.8rem;
   }
   .filter-btn.active {
-    background: var(--accent);
-    color: #fff;
+    background: rgba(79, 136, 255, 0.18);
+    border-color: rgba(99, 211, 199, 0.55);
+    color: var(--viewer-text);
   }
-  .transcript {
+  .turn-nav {
     display: grid;
-    gap: 18px;
+    gap: 8px;
+    max-height: calc(100vh - 220px);
+    overflow: auto;
+    padding-right: 4px;
+  }
+  .turn-link {
+    display: block;
+    padding: 10px 11px;
+    border-radius: 14px;
+    border: 1px solid var(--viewer-border);
+    background: rgba(18, 21, 32, 0.88);
+    color: var(--viewer-muted);
+    text-decoration: none;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    line-height: 1.45;
+  }
+  .turn-link:hover {
+    background: rgba(33, 37, 52, 0.96);
+    border-color: var(--viewer-border-strong);
+    text-decoration: none;
+  }
+  .turn-link-title {
+    color: var(--viewer-text);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .turn-link-meta {
+    margin-top: 3px;
+    font-size: 0.74rem;
+    color: var(--viewer-dim);
+  }
+  .sidebar-meta details {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 12px;
+    margin-top: 12px;
+  }
+  .sidebar-meta summary,
+  .insight-toggle {
+    cursor: pointer;
+    color: var(--viewer-text);
+    font-weight: 700;
+  }
+  .sidebar-stack,
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .viewer-main {
+    display: grid;
+    gap: 16px;
+  }
+  .viewer-header {
+    padding: 18px 20px;
+  }
+  .viewer-header-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: start;
+  }
+  .viewer-header h1 {
+    margin: 0;
+    font-size: 1.35rem;
+    line-height: 1.25;
+    color: var(--viewer-text);
+  }
+  .viewer-subtitle {
+    margin-top: 6px;
+    color: var(--viewer-muted);
+    font-size: 0.9rem;
+  }
+  .viewer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--viewer-border);
+    background: linear-gradient(180deg, rgba(79, 136, 255, 0.18), rgba(79, 136, 255, 0.1));
+    color: var(--viewer-text);
+    font-weight: 700;
+  }
+  .action-link:hover {
+    text-decoration: none;
+    border-color: var(--viewer-accent);
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--viewer-muted);
+    font-size: 0.78rem;
+    margin-right: 6px;
+    margin-bottom: 6px;
+  }
+  .pill.strong {
+    background: rgba(143, 209, 138, 0.12);
+    color: var(--viewer-success);
+    border-color: rgba(143, 209, 138, 0.18);
+  }
+  .pill.mixed {
+    background: rgba(243, 201, 107, 0.1);
+    color: var(--viewer-warn);
+    border-color: rgba(243, 201, 107, 0.16);
+  }
+  .pill.needs-review {
+    background: rgba(239, 138, 138, 0.12);
+    color: var(--viewer-danger);
+    border-color: rgba(239, 138, 138, 0.2);
+  }
+  .pill.outcome {
+    background: rgba(99, 211, 199, 0.12);
+    color: var(--viewer-accent);
+    border-color: rgba(99, 211, 199, 0.2);
+  }
+  .viewer-summary {
+    padding: 0;
+    overflow: hidden;
+  }
+  .viewer-summary summary {
+    list-style: none;
+    padding: 14px 18px;
+  }
+  .viewer-summary summary::-webkit-details-marker {
+    display: none;
+  }
+  .viewer-summary-body {
+    padding: 0 18px 18px;
+    display: grid;
+    gap: 14px;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .summary-metric {
+    border-radius: 14px;
+    border: 1px solid var(--viewer-border);
+    background: rgba(18, 21, 32, 0.82);
+    padding: 12px;
+  }
+  .summary-metric-label {
+    color: var(--viewer-dim);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .summary-metric-value {
+    margin-top: 6px;
+    color: var(--viewer-text);
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+  .summary-columns {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr 1fr;
+    gap: 12px;
+  }
+  .summary-block {
+    border-radius: 14px;
+    border: 1px solid var(--viewer-border);
+    background: rgba(18, 21, 32, 0.82);
+    padding: 12px;
+  }
+  .summary-block .small {
+    color: var(--viewer-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  .summary-line + .summary-line {
+    margin-top: 8px;
+  }
+  .portable-command {
+    margin-top: 10px;
+    white-space: pre-wrap;
   }
   .turn-block {
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    background: rgba(255, 253, 248, 0.9);
-    padding: 16px;
-    box-shadow: 0 6px 28px rgba(38, 34, 25, 0.05);
+    padding: 16px 18px;
   }
   .turn-header {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
   .turn-header-main {
     display: flex;
@@ -125,29 +316,38 @@
     display: grid;
     gap: 14px;
   }
-  .message {
-    max-width: 92%;
-  }
   .message.user {
     justify-self: end;
+    max-width: min(460px, 88%);
   }
   .message.assistant {
-    justify-self: start;
+    justify-self: stretch;
+    max-width: 100%;
   }
   .message-label {
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
     margin-bottom: 6px;
-    color: var(--muted);
+    color: var(--viewer-dim);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .message-meta {
+    margin-bottom: 8px;
+    color: var(--viewer-dim);
+    font-size: 0.78rem;
   }
   .bubble {
-    border-radius: 18px;
+    border-radius: 16px;
+    border: 1px solid var(--viewer-border);
+    background: rgba(37, 41, 56, 0.92);
     padding: 14px 16px;
-    border: 1px solid var(--line);
-    white-space: pre-wrap;
-    line-height: 1.55;
+    line-height: 1.6;
+    color: var(--viewer-text);
+  }
+  .message.user .bubble {
+    background: rgba(58, 51, 64, 0.92);
+    border-color: var(--viewer-user-border);
   }
   .bubble.rendered {
     white-space: normal;
@@ -163,7 +363,11 @@
   .bubble.rendered h3,
   .bubble.rendered h4 {
     margin: 0 0 0.7rem 0;
-    line-height: 1.25;
+    line-height: 1.28;
+    color: #f0f3fb;
+  }
+  .bubble.rendered h2 {
+    font-size: 1.02rem;
   }
   .bubble.rendered p,
   .bubble.rendered ul,
@@ -175,92 +379,90 @@
   }
   .bubble.rendered ul,
   .bubble.rendered ol {
-    padding-left: 1.4rem;
+    padding-left: 1.35rem;
   }
   .bubble.rendered li + li {
     margin-top: 0.3rem;
   }
+  .bubble.rendered a {
+    color: #9ec3ff;
+  }
   .bubble.rendered code {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     font-size: 0.92em;
-    padding: 0.14em 0.38em;
+    padding: 0.12em 0.35em;
     border-radius: 6px;
-    background: rgba(12, 87, 87, 0.08);
+    color: #d8f7f2;
+    background: rgba(99, 211, 199, 0.08);
   }
   .bubble.rendered pre {
     overflow: auto;
     padding: 14px;
     border-radius: 14px;
-    border: 1px solid rgba(31, 41, 55, 0.12);
-    background: #1f2937;
-    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--viewer-code);
+    color: #f7f7fb;
   }
   .bubble.rendered pre code {
     padding: 0;
     background: transparent;
     color: inherit;
     font-size: 0.9rem;
-    line-height: 1.55;
   }
   .bubble.rendered blockquote {
-    padding: 0.6rem 0.9rem;
-    border-left: 4px solid rgba(4, 93, 93, 0.35);
-    background: rgba(4, 93, 93, 0.06);
+    padding: 0.65rem 0.9rem;
+    border-left: 3px solid rgba(99, 211, 199, 0.45);
+    background: rgba(99, 211, 199, 0.06);
     border-radius: 0 10px 10px 0;
-    color: #41505c;
+    color: #cdd6e8;
   }
   .bubble.rendered table {
     width: 100%;
     border-collapse: collapse;
-    overflow: hidden;
     border-radius: 12px;
-    border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.65);
+    overflow: hidden;
+    border: 1px solid var(--viewer-border);
   }
   .bubble.rendered th,
   .bubble.rendered td {
     padding: 8px 10px;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--viewer-border);
     text-align: left;
     vertical-align: top;
   }
   .bubble.rendered th {
-    background: rgba(4, 93, 93, 0.06);
-    color: var(--ink);
-  }
-  .bubble.rendered hr {
-    border: 0;
-    border-top: 1px solid var(--line);
-    margin: 1rem 0;
-  }
-  .message-meta {
-    margin-bottom: 8px;
-    color: var(--muted);
-    font-size: 0.85rem;
+    background: rgba(255, 255, 255, 0.05);
   }
   .message-context {
     margin-top: 8px;
   }
-  .message-context summary {
+  .message-context summary,
+  .tool-drawer summary,
+  .raw-block summary {
     cursor: pointer;
+    color: var(--viewer-text);
   }
-  .message-context .soft + .soft {
-    margin-top: 8px;
+  .soft {
+    background: rgba(37, 41, 56, 0.9);
+    border: 1px solid var(--viewer-border);
+    border-radius: 12px;
+    padding: 10px 12px;
   }
-  .message.user .bubble {
-    background: linear-gradient(135deg, #efe8db, #f8f3ea);
+  .small {
+    font-size: 0.9rem;
+    color: var(--viewer-muted);
+    line-height: 1.55;
   }
-  .message.assistant .bubble {
-    background: linear-gradient(135deg, #fffdf8, #f7f4ee);
+  .muted {
+    color: var(--viewer-muted);
   }
   .tool-drawer {
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: #f8f4ec;
+    border: 1px solid var(--viewer-border);
+    border-radius: 16px;
+    background: rgba(20, 23, 33, 0.88);
     overflow: hidden;
   }
   .tool-drawer summary {
-    cursor: pointer;
     list-style: none;
     padding: 12px 14px;
     display: flex;
@@ -277,9 +479,9 @@
     gap: 10px;
   }
   .tool-item {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: #fff;
+    border-radius: 14px;
+    border: 1px solid var(--viewer-border);
+    background: rgba(37, 41, 56, 0.82);
     padding: 12px;
   }
   .tool-item-head {
@@ -290,152 +492,85 @@
     margin-bottom: 8px;
   }
   .tool-item-title {
+    color: var(--viewer-text);
     font-weight: 700;
   }
   .tool-item-meta {
-    color: var(--muted);
-    font-size: 0.85rem;
+    color: var(--viewer-dim);
+    font-size: 0.82rem;
   }
   .tool-json {
     margin-top: 8px;
   }
-  .mini-metrics {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .mini-metric {
-    padding: 12px;
-    border: 1px solid var(--line);
+  pre {
+    background: #121520;
+    border: 1px solid var(--viewer-border);
+    color: #dce2f2;
     border-radius: 14px;
-    background: #fff;
-  }
-  .mini-metric-value {
-    font-size: 1.35rem;
-    font-weight: 700;
+    padding: 14px;
+    overflow: auto;
+    white-space: pre-wrap;
   }
   .details-stack {
     display: grid;
     gap: 12px;
-    margin-top: 18px;
   }
-  .raw-block summary {
-    cursor: pointer;
-    font-weight: 700;
+  .raw-block {
+    padding: 14px 16px;
   }
   .raw-block pre {
     margin-top: 12px;
   }
-  @media (max-width: 1100px) {
-    .session-shell {
+  @media (max-width: 1180px) {
+    .viewer-page {
       grid-template-columns: 1fr;
     }
-    .session-sidebar {
+    .viewer-sidebar {
       position: static;
+    }
+    .turn-nav {
+      max-height: 360px;
+    }
+    .summary-grid,
+    .summary-columns {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 760px) {
+    .viewer-header-top,
+    .turn-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .summary-grid,
+    .summary-columns {
+      grid-template-columns: 1fr;
+    }
+    .message.user,
+    .message.assistant {
+      max-width: 100%;
     }
   }
 </style>
 
-<div class="card session-hero">
-  <div class="hero-top">
-    <div>
-      <div class="eyebrow">Session Viewer</div>
-      <h1>{{ session.case_title }}</h1>
-      <div class="muted" style="margin-top:6px;">{{ session.session_id }}</div>
-    </div>
-    {% if session.can_export_claude_bundle %}
-      <div class="hero-actions">
-        <a class="action-link" href="/api/v1/sessions/{{ session.session_id }}/export/claude-bundle">
-          Download Claude Session Pack
-        </a>
+<div class="viewer-page">
+  <aside class="viewer-sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-title">Search</div>
+      <div class="sidebar-search">
+        <input id="turn-search" type="text" placeholder="Search this session..." />
       </div>
-    {% endif %}
-  </div>
-  <div class="stack" style="margin-top:12px;">
-    <span class="pill">{{ session.source }}</span>
-    <span class="pill">{{ session.user_id }}</span>
-    {% if session.repo %}<span class="pill">{{ session.repo }}</span>{% endif %}
-    <span class="pill">{{ session.category }}</span>
-    {% if session.model_primary %}<span class="pill">{{ session.model_primary }}</span>{% endif %}
-    {% if session.status %}<span class="pill">{{ session.status }}</span>{% endif %}
-    <span class="pill {% if session.quality_label == 'strong' %}strong{% elif session.quality_label == 'needs_review' %}needs-review{% else %}mixed{% endif %}">
-      {{ session.quality_label_text }} · {{ session.quality_score }}
-    </span>
-    <span class="pill outcome">{{ session.outcome_status }}</span>
-    <span class="pill">{{ session.work_pattern_label }}</span>
-  </div>
-</div>
-
-<div class="session-shell">
-  <aside class="session-sidebar">
-    <div class="card sidebar-section">
-      <div class="eyebrow">Overview</div>
-      <div class="mini-metrics">
-        <div class="mini-metric">
-          <div class="muted small">Turns</div>
-          <div class="mini-metric-value">{{ session.turn_count }}</div>
-        </div>
-        <div class="mini-metric">
-          <div class="muted small">Tools</div>
-          <div class="mini-metric-value">{{ session.tool_call_count }}</div>
-        </div>
-        <div class="mini-metric">
-          <div class="muted small">Duration</div>
-          <div class="mini-metric-value">{{ session.duration_sec or 0 }}s</div>
-        </div>
-        <div class="mini-metric">
-          <div class="muted small">Follow-ups</div>
-          <div class="mini-metric-value">{{ session.followup_turns }}</div>
-        </div>
+      <div class="sidebar-title" style="margin-top: 12px;">Filters</div>
+      <div class="filter-row">
+        <button type="button" class="filter-btn active" data-mode="all">Default</button>
+        <button type="button" class="filter-btn" data-mode="no-tools">No-tools</button>
+        <button type="button" class="filter-btn" data-mode="user">User</button>
+        <button type="button" class="filter-btn" data-mode="assistant">Assistant</button>
       </div>
-      <div class="soft small" style="margin-top:14px;">
-        <div class="eyebrow">Topic</div>
-        <div>{{ session.topic_signature }}</div>
-      </div>
-      <div class="soft small" style="margin-top:12px;">
-        <div class="eyebrow">Tool Path</div>
-        <div>{{ session.tool_path_text }}</div>
-      </div>
-      <div class="soft small" style="margin-top:12px;">
-        <div class="eyebrow">Prompt Tags</div>
-        <div class="stack">
-          {% for tag in session.prompt_tags %}
-            <span class="pill">{{ tag }}</span>
-          {% endfor %}
-        </div>
-      </div>
-      {% if session.can_export_claude_bundle %}
-        <div class="soft small" style="margin-top:12px;">
-          <div class="eyebrow">Portable Resume</div>
-          <div>Import this bundle on another machine from the target repo root:</div>
-          <pre style="margin-top:10px;">cc-stats client import-claude-session ~/Downloads/{{ session.claude_bundle_name }} --project-dir /path/to/repo</pre>
-        </div>
-      {% endif %}
     </div>
 
-    <div class="card sidebar-section">
-      <div class="eyebrow">What Worked</div>
-      {% for item in session.insights.strengths %}
-        <div class="small" style="margin-bottom:8px;">{{ item }}</div>
-      {% endfor %}
-      {% if not session.insights.strengths %}
-        <div class="small muted">No explicit strength signal.</div>
-      {% endif %}
-    </div>
-
-    <div class="card sidebar-section">
-      <div class="eyebrow">Review Gaps</div>
-      {% if session.insights.gaps %}
-        {% for item in session.insights.gaps %}
-          <div class="small" style="margin-bottom:8px;">{{ item }}</div>
-        {% endfor %}
-      {% else %}
-        <div class="small muted">No obvious review gap.</div>
-      {% endif %}
-    </div>
-
-    <div class="card sidebar-section">
-      <div class="eyebrow">Turn Navigator</div>
+    <div class="sidebar-card">
+      <div class="sidebar-title">Conversation</div>
       <div class="turn-nav">
         {% for item in session.turn_items %}
           <a class="turn-link" href="#{{ item.anchor }}">
@@ -449,18 +584,136 @@
         {% endfor %}
       </div>
     </div>
-  </aside>
 
-  <main>
-    <div class="card transcript-toolbar">
-      <input id="turn-search" type="text" placeholder="Search this session..." />
-      <div class="filter-row">
-        <button type="button" class="filter-btn active" data-mode="all">All</button>
-        <button type="button" class="filter-btn" data-mode="user">User</button>
-        <button type="button" class="filter-btn" data-mode="assistant">Assistant</button>
-        <button type="button" class="filter-btn" data-mode="no-tools">No Tools</button>
+    <div class="sidebar-card summary">
+      <div class="sidebar-meta">
+        <div class="sidebar-title">Session Brief</div>
+        <div class="small summary-line">{{ session.topic_signature }}</div>
+        <details>
+          <summary>Prompt Tags</summary>
+          <div class="stack" style="margin-top:10px;">
+            {% for tag in session.prompt_tags %}
+              <span class="pill">{{ tag }}</span>
+            {% endfor %}
+          </div>
+        </details>
+        <details>
+          <summary>What Worked</summary>
+          <div style="margin-top:10px;">
+            {% for item in session.insights.strengths %}
+              <div class="small summary-line">{{ item }}</div>
+            {% endfor %}
+            {% if not session.insights.strengths %}
+              <div class="small muted">No explicit strength signal.</div>
+            {% endif %}
+          </div>
+        </details>
+        <details>
+          <summary>Review Gaps</summary>
+          <div style="margin-top:10px;">
+            {% if session.insights.gaps %}
+              {% for item in session.insights.gaps %}
+                <div class="small summary-line">{{ item }}</div>
+              {% endfor %}
+            {% else %}
+              <div class="small muted">No obvious review gap.</div>
+            {% endif %}
+          </div>
+        </details>
       </div>
     </div>
+  </aside>
+
+  <main class="viewer-main">
+    <section class="viewer-card viewer-header">
+      <div class="viewer-header-top">
+        <div>
+          <div class="eyebrow">Session Viewer</div>
+          <h1>{{ session.case_title }}</h1>
+          <div class="viewer-subtitle">{{ session.session_id }}</div>
+        </div>
+        <div class="viewer-actions">
+          {% if session.can_export_claude_bundle %}
+            <a class="action-link" href="/api/v1/sessions/{{ session.session_id }}/export/claude-bundle">
+              Download Claude Session Pack
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="stack" style="margin-top:12px;">
+        <span class="pill">{{ session.source }}</span>
+        <span class="pill">{{ session.user_id }}</span>
+        {% if session.repo %}<span class="pill">{{ session.repo }}</span>{% endif %}
+        <span class="pill">{{ session.category }}</span>
+        {% if session.model_primary %}<span class="pill">{{ session.model_primary }}</span>{% endif %}
+        {% if session.status %}<span class="pill">{{ session.status }}</span>{% endif %}
+        <span class="pill {% if session.quality_label == 'strong' %}strong{% elif session.quality_label == 'needs_review' %}needs-review{% else %}mixed{% endif %}">
+          {{ session.quality_label_text }} · {{ session.quality_score }}
+        </span>
+        <span class="pill outcome">{{ session.outcome_status }}</span>
+        <span class="pill">{{ session.work_pattern_label }}</span>
+      </div>
+    </section>
+
+    <details class="viewer-card viewer-summary">
+      <summary class="insight-toggle">Session Insights</summary>
+      <div class="viewer-summary-body">
+        <div class="summary-grid">
+          <div class="summary-metric">
+            <div class="summary-metric-label">Turns</div>
+            <div class="summary-metric-value">{{ session.turn_count }}</div>
+          </div>
+          <div class="summary-metric">
+            <div class="summary-metric-label">Tools</div>
+            <div class="summary-metric-value">{{ session.tool_call_count }}</div>
+          </div>
+          <div class="summary-metric">
+            <div class="summary-metric-label">Duration</div>
+            <div class="summary-metric-value">{{ session.duration_sec or 0 }}s</div>
+          </div>
+          <div class="summary-metric">
+            <div class="summary-metric-label">Follow-ups</div>
+            <div class="summary-metric-value">{{ session.followup_turns }}</div>
+          </div>
+        </div>
+
+        <div class="summary-columns">
+          <div class="summary-block">
+            <div class="eyebrow">Topic</div>
+            <div class="small">{{ session.topic_signature }}</div>
+            <div class="eyebrow" style="margin-top:12px;">Tool Path</div>
+            <div class="small">{{ session.tool_path_text }}</div>
+          </div>
+          <div class="summary-block">
+            <div class="eyebrow">What Worked</div>
+            {% for item in session.insights.strengths %}
+              <div class="small summary-line">{{ item }}</div>
+            {% endfor %}
+            {% if not session.insights.strengths %}
+              <div class="small muted">No explicit strength signal.</div>
+            {% endif %}
+          </div>
+          <div class="summary-block">
+            <div class="eyebrow">Review Gaps</div>
+            {% if session.insights.gaps %}
+              {% for item in session.insights.gaps %}
+                <div class="small summary-line">{{ item }}</div>
+              {% endfor %}
+            {% else %}
+              <div class="small muted">No obvious review gap.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if session.can_export_claude_bundle %}
+          <div class="summary-block">
+            <div class="eyebrow">Portable Resume</div>
+            <div class="small">Import this bundle on another machine from the target repo root:</div>
+            <pre class="portable-command">cc-stats client import-claude-session ~/Downloads/{{ session.claude_bundle_name }} --project-dir /path/to/repo</pre>
+          </div>
+        {% endif %}
+      </div>
+    </details>
 
     <div class="transcript">
       {% for turn in session.turns %}
@@ -573,11 +826,11 @@
     </div>
 
     <div class="details-stack">
-      <details class="card raw-block">
+      <details class="raw-block">
         <summary>Session Payload</summary>
         <pre>{{ session.raw_payload_pretty }}</pre>
       </details>
-      <details class="card raw-block">
+      <details class="raw-block">
         <summary>Session Extra</summary>
         <pre>{{ session.extra_pretty }}</pre>
       </details>
@@ -611,6 +864,7 @@
 
         if (mode === 'user' && !hasUser) visible = false;
         if (mode === 'assistant' && !hasAssistant) visible = false;
+        if (mode === 'no-tools' && hasTools) visible = false;
 
         block.style.display = visible ? '' : 'none';
 

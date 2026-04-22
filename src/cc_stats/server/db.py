@@ -751,21 +751,26 @@ def get_session_detail(conn: sqlite3.Connection, session_id: str) -> Optional[Di
                 ],
             )
         ).lower()
-        preview = (
-            user_view.get("preview_text")
-            or assistant_view.get("preview_text")
-            or ""
-        )
-        if not preview and (user_view.get("hidden_segments") or assistant_view.get("hidden_segments")):
+        assistant_preview = assistant_view.get("preview_text") or assistant_view.get("fallback_preview") or ""
+        user_preview = user_view.get("preview_text") or user_view.get("fallback_preview") or ""
+        if assistant_preview:
+            preview_role = "assistant"
+            preview = assistant_preview
+        elif user_preview:
+            preview_role = "user"
+            preview = user_preview
+        elif user_view.get("hidden_segments") or assistant_view.get("hidden_segments"):
             preview = "Setup/context scaffold only"
-        if not preview:
-            preview = user_view.get("fallback_preview") or assistant_view.get("fallback_preview") or ""
+            preview_role = "event"
+        else:
+            preview_role = "event"
+            preview = ""
         turn_items.append(
             {
                 "turn_idx": turn["turn_idx"],
                 "anchor": turn["anchor"],
-                "label": "Turn {0}".format(turn["turn_idx"]),
                 "preview": preview or "No text",
+                "preview_role": preview_role,
                 "tool_count": len(turn_calls),
                 "scaffold_only": bool(
                     (user_view.get("is_scaffold_only") or assistant_view.get("is_scaffold_only"))

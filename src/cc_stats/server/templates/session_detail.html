@@ -130,9 +130,20 @@
     text-decoration: none;
   }
   .turn-link-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     color: var(--viewer-text);
-    font-size: 0.8rem;
+    font-size: 0.76rem;
     font-weight: 700;
+    text-transform: lowercase;
+  }
+  .turn-link-role {
+    color: var(--viewer-accent);
+  }
+  .turn-link-index {
+    color: var(--viewer-dim);
+    font-weight: 600;
   }
   .turn-link-meta {
     margin-top: 3px;
@@ -344,10 +355,6 @@
     padding: 14px 16px;
     line-height: 1.6;
     color: var(--viewer-text);
-  }
-  .message.user .bubble {
-    background: rgba(58, 51, 64, 0.92);
-    border-color: var(--viewer-user-border);
   }
   .bubble.rendered {
     white-space: normal;
@@ -574,7 +581,10 @@
       <div class="turn-nav">
         {% for item in session.turn_items %}
           <a class="turn-link" href="#{{ item.anchor }}">
-            <div class="turn-link-title">{{ item.label }}</div>
+            <div class="turn-link-title">
+              <span class="turn-link-role">{{ item.preview_role }}</span>
+              <span class="turn-link-index">#{{ item.turn_idx }}</span>
+            </div>
             <div class="turn-link-meta">{{ item.preview or "No text" }}</div>
             {% if item.scaffold_only %}
               <div class="turn-link-meta">setup/context scaffold</div>
@@ -585,43 +595,6 @@
       </div>
     </div>
 
-    <div class="sidebar-card summary">
-      <div class="sidebar-meta">
-        <div class="sidebar-title">Session Brief</div>
-        <div class="small summary-line">{{ session.topic_signature }}</div>
-        <details>
-          <summary>Prompt Tags</summary>
-          <div class="stack" style="margin-top:10px;">
-            {% for tag in session.prompt_tags %}
-              <span class="pill">{{ tag }}</span>
-            {% endfor %}
-          </div>
-        </details>
-        <details>
-          <summary>What Worked</summary>
-          <div style="margin-top:10px;">
-            {% for item in session.insights.strengths %}
-              <div class="small summary-line">{{ item }}</div>
-            {% endfor %}
-            {% if not session.insights.strengths %}
-              <div class="small muted">No explicit strength signal.</div>
-            {% endif %}
-          </div>
-        </details>
-        <details>
-          <summary>Review Gaps</summary>
-          <div style="margin-top:10px;">
-            {% if session.insights.gaps %}
-              {% for item in session.insights.gaps %}
-                <div class="small summary-line">{{ item }}</div>
-              {% endfor %}
-            {% else %}
-              <div class="small muted">No obvious review gap.</div>
-            {% endif %}
-          </div>
-        </details>
-      </div>
-    </div>
   </aside>
 
   <main class="viewer-main">
